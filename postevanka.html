@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Igra Poštevanke</title>
+    <style>
+        /* Tle štimamo vizuale - aesthetics matter, model */
+        :root {
+            --primary: #6366f1; /* Indigo vibe */
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899; /* Pink, da malo seka ven */
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e; /* Green light za uspeh */
+            --error: #ef4444; /* Rdeča k vse zajebaš */
+            --grid-gap: 4px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Header setup - da folk ve kje je timer */
+        header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .timer-container {
+            font-family: 'Courier New', monospace; /* Retro look */
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--surface);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        button#start-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s; /* Smooth animacije */
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        button#start-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px); /* Mal hopa gor */
+        }
+
+        /* Layout za igrišče */
+        .game-container {
+            display: flex;
+            gap: 40px;
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap; 
+        }
+
+        /* Grid wrapper - škatla za mrežo */
+        .grid-wrapper {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+            overflow: auto;
+        }
+
+        .multiplication-grid {
+            display: grid;
+            grid-template-columns: 40px repeat(10, 1fr);
+            grid-template-rows: 40px repeat(10, 1fr);
+            gap: var(--grid-gap);
+        }
+
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            aspect-ratio: 1; 
+            width: 50px; 
+            height: 50px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            cursor: default;
+            transition: all 0.2s ease;
+            user-select: none;
+            border: 2px solid transparent;
+        }
+
+        /* Headerji (1, 2, 3...) */
+        .cell.header {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        /* Celice k se jih da kliknit */
+        .cell.playable {
+            cursor: pointer;
+        }
+
+        .cell.playable:hover {
+            background: #e2e8f0;
+        }
+
+        .cell.selected {
+            border-color: var(--primary);
+            background: #e0e7ff;
+            transform: scale(0.95); /* Klik efekt */
+        }
+
+        .cell.solved {
+            background: var(--success);
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 0 15px var(--success); /* Glow effect, ker smo carji */
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-color: transparent;
+        }
+
+        /* Desni meni s ciframi */
+        .sidebar {
+            width: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            color: var(--text);
+            font-size: 1.2rem;
+        }
+
+        .number-option {
+            background: white;
+            border: 2px solid var(--border);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .number-option:hover {
+            border-color: var(--secondary);
+            color: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .number-option.selected {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);
+        }
+
+        /* Modal oken za konec igre */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal h2 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        /* Animations - shake it baby */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
+        .shake-screen {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Mobile responsive sranje, ker folk ne uporablja več PCja */
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column-reverse;
+                align-items: center;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .cell {
+                width: 30px;
+                height: 30px;
+                font-size: 0.6rem;
+            }
+            .multiplication-grid {
+                grid-template-columns: 30px repeat(10, 1fr);
+                grid-template-rows: 30px repeat(10, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="timer-container" id="timer">Time: 00:00.00</div>
+        <h1>Poštevanka</h1>
+        <button id="start-btn" onclick="startGame()">Nova igra</button>
+    </header>
+
+    <div class="game-container">
+        <div class="grid-wrapper">
+            <div class="multiplication-grid" id="grid">
+                </div>
+        </div>
+
+        <div class="sidebar">
+            <h2>Števila</h2>
+            <div id="numbers-container">
+                </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="win-modal">
+        <div class="modal">
+            <h2>Čestitke!</h2>
+            <p>Vse ste rešili pravilno!<br>Vaš čas:<br><strong id="final-time" style="font-size: 2rem; color: var(--primary);">00:00.00</strong></p>
+            <button id="start-btn-modal" onclick="startGame()" style="background: var(--success); color: white; border:none; padding: 15px 30px; border-radius: 8px; font-size: 1.2rem; cursor: pointer;">Igraj ponovno</button>
+        </div>
+    </div>
+
+    <script>
+        // --- State mašine (Global variables) ---
+        let isGameRunning = false;
+        let startTime = 0;
+        let timerInterval;
+        let selectedCell = null;
+        let selectedNumberIdx = null; // Kero cifro mamo zbrano v roki
+        
+        // --- Kontejnerji za podatke ---
+        let gridData = []; // Tle si zapomnimo kaj je že rešeno (da ne bluzimo)
+        let currentHand = []; // Trenutnih 5 kart v roki
+
+        // Reference na DOM elemente (da jih ne iščemo skos)
+        const gridEl = document.getElementById('grid');
+        const numbersContainer = document.getElementById('numbers-container');
+        const timerEl = document.getElementById('timer');
+        const modal = document.getElementById('win-modal');
+        const body = document.body;
+
+        // --- Init Logic ---
+
+        function initGrid() {
+            gridEl.innerHTML = ''; // Briši vse predn začnemo, da ni smeti
+            
+            // Levi zgornji kot (prazn flek)
+            const corner = document.createElement('div');
+            corner.className = 'cell header';
+            corner.innerText = '×';
+            gridEl.appendChild(corner);
+
+            // Zgornji header row (1-10)
+            for (let i = 1; i <= 10; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell header';
+                cell.innerText = i;
+                gridEl.appendChild(cell);
+            }
+
+            // Generiramo grid (matrix style)
+            for (let r = 1; r <= 10; r++) {
+                const rowHeader = document.createElement('div');
+                rowHeader.className = 'cell header';
+                rowHeader.innerText = r;
+                gridEl.appendChild(rowHeader);
+
+                for (let c = 1; c <= 10; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell playable';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.innerText = `${r}×${c}`;
+                    cell.onclick = () => handleCellClick(r, c, cell); // Click handler
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        // --- Game Logic ---
+
+        function startGame() {
+            // Resetiramo vse state spremenljivke na nulo. Clean slate.
+            isGameRunning = true;
+            gridData = Array(11).fill(null).map(() => Array(11).fill(false)); 
+            currentHand = [];
+            selectedCell = null;
+            selectedNumberIdx = null;
+
+            modal.classList.remove('active'); // Skrij win screen če je odprt
+            
+            // Jovo na novo zgradimo grid. Zihr je zihr.
+            // Če sam odstranimo classe, zna bit buggy. Rebuild je zakon.
+            initGrid();
+
+            // Dej prve karte na mizo in startaj uro
+            refillHand();
+            startTimer();
+        }
+
+        function refillHand() {
+            // Tle je bil prej bug. Zdej delamo scan celega boarda.
+            
+            // 1. Poberemo vse prazne fleke na boardu. Kje še nismo rešl?
+            let emptySpots = [];
+            for(let r=1; r<=10; r++){
+                for(let c=1; c<=10; c++){
+                    if(!gridData[r][c]) { // Če ni rešeno, dej v pool
+                        emptySpots.push({ r, c, val: r * c });
+                    }
+                }
+            }
+
+            // 2. Filtriramo. Ne mi dajat istih cifer k jih mam že v roki, nismo amaterji.
+            // Če mam že karto za 5x6 (30), ne rabim še ene za 6x5 (30) v isti roki.
+            emptySpots = emptySpots.filter(spot => {
+                const alreadyInHand = currentHand.some(handItem => handItem.r === spot.r && handItem.c === spot.c);
+                return !alreadyInHand;
+            });
+
+            // 3. Mal premešamo, da ni dolgčas (Fisher-Yates shuffle al neki tacga)
+            shuffleArray(emptySpots);
+
+            // 4. Filaj roko do 5 cifer. Full house.
+            while (currentHand.length < 5 && emptySpots.length > 0) {
+                currentHand.push(emptySpots.pop());
+            }
+
+            renderSidebar(); // Update UI
+        }
+
+        function renderSidebar() {
+            numbersContainer.innerHTML = ''; // Spucaj container
+            currentHand.forEach((item, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'number-option';
+                // Če je ta knof zbran, mu dej highlight
+                if (index === selectedNumberIdx) btn.classList.add('selected');
+                
+                btn.innerText = item.val;
+                btn.onclick = () => handleNumberClick(index); // Click listener
+                numbersContainer.appendChild(btn);
+            });
+        }
+
+        // --- Interaction Handlers (Klikanje) ---
+
+        function handleCellClick(r, c, cellEl) {
+            if (!isGameRunning) return; // Ne tikaj če igra ne laufa
+            if (gridData[r][c]) return; // Če je že rešeno, ignore
+
+            // Odznač prejšnjo celico (unselect)
+            const prev = document.querySelector('.cell.selected');
+            if (prev) prev.classList.remove('selected');
+
+            // Označ novo (select)
+            cellEl.classList.add('selected');
+            selectedCell = { r, c, el: cellEl };
+
+            // Če mamo že zbrano cifro v roki, prever takoj
+            if (selectedNumberIdx !== null) {
+                checkMatch();
+            }
+        }
+
+        function handleNumberClick(index) {
+            if (!isGameRunning) return;
+
+            selectedNumberIdx = index;
+            renderSidebar(); // Rerender, da se vidi kera je zbrana
+
+            // Če mamo že zbran flek na gridu, prever takoj
+            if (selectedCell) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const r = selectedCell.r;
+            const c = selectedCell.c;
+            const correctVal = r * c; // Matematika ne laže
+            
+            const handItem = currentHand[selectedNumberIdx];
+            const selectedVal = handItem.val;
+
+            if (correctVal === selectedVal) {
+                // Tooo, pravilno!
+                handleCorrect(handItem);
+            } else {
+                // Zajebal si.
+                handleWrong();
+            }
+        }
+
+        function handleCorrect(handItem) {
+            // 1. Pofarbaj na zeleno. Dopamin hit.
+            selectedCell.el.classList.remove('selected');
+            selectedCell.el.classList.remove('playable');
+            selectedCell.el.classList.add('solved');
+            selectedCell.el.innerText = handItem.val; // Pokaž cifro
+
+            // 2. Zapiš v logiko da je tole rešeno
+            gridData[selectedCell.r][selectedCell.c] = true;
+
+            // 3. Vrzi karto stran. Bye bye.
+            currentHand.splice(selectedNumberIdx, 1);
+
+            // 4. Reset selectiona
+            selectedCell = null;
+            selectedNumberIdx = null;
+
+            // 5. Dej nove karte (refill logic)
+            refillHand();
+            
+            // 6. A smo zmagal?
+            checkWin();
+        }
+
+        function handleWrong() {
+            // Shake screen effect - da user ve da je falil
+            body.classList.add('shake-screen');
+            setTimeout(() => {
+                body.classList.remove('shake-screen');
+            }, 500);
+
+            // Odznač vse, da mora probat še enkrat
+            if(selectedCell) selectedCell.el.classList.remove('selected');
+            selectedNumberIdx = null;
+            selectedCell = null;
+            renderSidebar();
+        }
+
+        function checkWin() {
+            let filled = 0;
+            // Preštej kolk je zelenih
+            for(let r=1; r<=10; r++) {
+                for(let c=1; c<=10; c++) {
+                    if(gridData[r][c]) filled++;
+                }
+            }
+
+            // Če jih je 100, smo na konju
+            if(filled === 100) {
+                stopTimer();
+                isGameRunning = false;
+                // Kopiraj čas v modal
+                document.getElementById('final-time').innerText = timerEl.innerText.replace('Time: ', '');
+                setTimeout(() => {
+                    modal.classList.add('active'); // Pokaž modal
+                }, 500);
+            }
+        }
+
+        // --- Helpers ---
+
+        function shuffleArray(array) {
+            // Klasičen shuffle, nič posebnega
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- Timer Stuff ---
+
+        function startTimer() {
+            startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 30); // 30ms refresh rate
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateTimer() {
+            const now = Date.now();
+            const diff = now - startTime;
+            
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            const centis = Math.floor((diff % 1000) / 10);
+
+            // Formatting cifer da lepo zgleda
+            timerEl.innerText = 
+                `Time: ${pad(minutes)}:${pad(seconds)}.${pad(centis)}`;
+        }
+
+        function pad(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        // Laufaj init takoj k se page loada
+        initGrid();
+
+    </script>
+</body>
+</html>
