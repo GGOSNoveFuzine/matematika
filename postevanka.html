@@ -3,41 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Igra Poštevanke - Flex Sendvič</title>
+    <title>Igra Poštevanke - The Real Deal</title>
     <style>
+        /* --- VIBE CHECK (Barve & Stuff) --- */
         :root {
-            --primary: #6366f1;
+            --primary: #6366f1;       /* Indigo, k ti seka */
             --primary-dark: #4f46e5;
-            --secondary: #ec4899;
+            --secondary: #ec4899;     /* Pink, za malo drame */
             --bg: #f8fafc;
             --surface: #ffffff;
             --text: #1e293b;
             --text-light: #64748b;
             --border: #e2e8f0;
-            --success: #22c55e;
+            --success: #22c55e;       /* Zelena ko zadaneš */
             --grid-gap: 2px;
+            
+            /* SVETA FORMULA ZA MOBITEL: 
+               8.5vw = 8.5% širine ekrana. 
+               To zagotovi, da 10 krogcev paše v vrsto brez da bi eksplodiral ekran. */
+            --mobile-cell-size: 8.5vw; 
         }
 
-        /* --- 1. GLOBALNA STRUKTURA (THE SANDWICH) --- */
+        /* --- 1. THE SANDWICH (Arhitektura) --- */
         html, body {
             margin: 0; padding: 0;
             height: 100%; 
-            /* To prepreči skrolanje cele strani na mobilu */
-            height: 100dvh; 
+            height: 100dvh; /* 100% višine, da se address bar ne meša zraven */
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            overflow: hidden; /* Glavni scroll je onemogočen */
+            overflow: hidden; /* ZAKLENI SCROLL: Nobenega premikanja cele strani! */
         }
 
         body {
             display: flex;
-            flex-direction: column; /* Zlagamo: Header -> Main -> Footer */
+            flex-direction: column; /* Zlagamo nadstropja: Header -> Game -> Footer */
         }
 
-        /* --- 2. ZGORNJI DEL (HEADER) --- */
+        /* --- 2. PENTHOUSE (Header) --- */
         header {
-            flex: 0 0 auto; /* Fiksna višina */
+            flex: 0 0 auto; /* Fiksna višina, ne se raztegovat */
             width: 100%;
             padding: 8px 10px;
             background: var(--bg);
@@ -51,16 +56,18 @@
         }
 
         .timer-container {
-            font-family: 'Courier New', monospace; font-size: 1rem; font-weight: bold;
+            font-family: 'Courier New', monospace; /* Hekerski vajb */
+            font-size: 1rem; font-weight: bold;
             background: var(--surface); padding: 4px 8px; border-radius: 8px;
             border: 1px solid var(--border); white-space: nowrap;
         }
 
         .mode-container {
             display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2px;
-            overflow-x: auto; scrollbar-width: none;
+            overflow-x: auto; scrollbar-width: none; /* Skrij tist grd scrollbar */
         }
         .mode-container::-webkit-scrollbar { display: none; }
+        
         .mode-btn {
             background: transparent; border: none; padding: 4px 8px; cursor: pointer; font-weight: 600; color: var(--text-light); font-size: 0.8rem; white-space: nowrap;
         }
@@ -70,10 +77,10 @@
             background: var(--primary); color: white; border: none; padding: 5px 12px; font-size: 0.9rem; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap;
         }
 
-        /* --- 3. SREDNJI DEL (MAIN GAME AREA) --- */
-        /* Ta del zavzame ves preostali prostor in omogoča skrolanje TABELE, ne strani */
+        /* --- 3. THE MEAT (Igralno Polje) --- */
+        /* Tle je glavna fora. Samo ta del se lahko skrola. */
         .game-main {
-            flex: 1 1 auto; /* Raztegni se */
+            flex: 1 1 auto; /* Pojjej ves preostali prostor */
             position: relative;
             width: 100%;
             overflow: hidden; /* Načeloma skrijemo, razen če rabi scroll */
@@ -81,7 +88,7 @@
             justify-content: center;
         }
 
-        /* Kontejner za namizje (Grid + Sidebar v vrsti) */
+        /* Desktop Wrapper: Drži mrežo in sidebar skupaj na velikem ekranu */
         .desktop-wrapper {
             display: flex;
             flex-direction: row;
@@ -90,7 +97,7 @@
             gap: 20px;
             padding: 20px;
             width: 100%; max-width: 1200px;
-            overflow-y: auto; /* Desktop scroll */
+            overflow-y: auto; /* Če je namizje premajhno, skrolaj tole */
         }
 
         .grid-wrapper {
@@ -99,10 +106,10 @@
             flex-shrink: 0;
         }
 
-        /* Grid Setup */
+        /* --- THE GRID (Kjer se potimo) --- */
         .multiplication-grid {
             display: grid;
-            /* Headerji so 24px (ožji), celice 38px */
+            /* Headerji so 24px (skinny fit), celice 38px (za miško) */
             grid-template-columns: 24px repeat(10, 38px);
             grid-template-rows: 24px repeat(10, 38px);
             gap: 2px;
@@ -118,20 +125,19 @@
         .cell.header { 
             background: var(--primary); color: white; font-weight: bold; 
             font-size: 0.75rem; 
-            /* Headerji niso nujno kvadrati */
-            aspect-ratio: auto !important; 
+            aspect-ratio: auto !important; /* Header ni nujno kvadrat, naj se stisne */
         }
 
         .cell.playable { 
             cursor: pointer; background: #fff; border: 1px solid #e2e8f0; 
-            aspect-ratio: 1; /* Igralna polja so kvadrati */
+            aspect-ratio: 1; /* Igralno polje MORA bit kvadrat */
         }
         .cell.playable:hover { background: #e0e7ff; }
         .cell.selected { background: #c7d2fe; border-color: var(--primary); font-weight: bold; transform: scale(0.95); }
         .cell.solved { background: var(--success); color: white; font-weight: bold; }
         .cell.inactive { background: #f8fafc; color: #e2e8f0; pointer-events: none; }
 
-        /* Sidebar (Desktop Style) */
+        /* Sidebar (Na desktopu je desno, chillin') */
         .sidebar {
             width: 110px; background: var(--surface); padding: 15px 10px; border-radius: 16px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border);
@@ -151,24 +157,24 @@
         .number-option.selected { background: var(--secondary); color: white; border-color: var(--secondary); box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4); }
 
 
-        /* --- 4. SPODNJI DEL (MOBILE FOOTER SLOT) --- */
+        /* --- 4. KLET (MOBILE FOOTER SLOT) --- */
+        /* Tle noter bo JS vrgel sidebar, ko smo na mobitelu */
         #mobile-footer-slot {
             flex: 0 0 auto; /* Fiksna višina na dnu */
             width: 100%;
             z-index: 20;
-            /* Prazen na desktopu, polnjen z JS na mobilu */
         }
 
 
-        /* --- MOBILE TRANSITION (< 800px) --- */
+        /* --- MOBILE MODE (< 800px) --- */
         @media (max-width: 800px) {
             
             /* SREDNJI DEL (Igra) */
             .desktop-wrapper {
                 flex-direction: column;
-                align-items: center; justify-content: center; /* Centriraj mrežo */
+                align-items: center; justify-content: center; /* Centriraj vse skupaj */
                 padding: 5px;
-                overflow-y: auto; /* Dovoli skrolanje same mreže če je previsoka */
+                overflow-y: auto; /* Dovoli skrolanje same mreže, če je previsoka */
                 height: 100%;
             }
 
@@ -178,9 +184,12 @@
                 display: flex; justify-content: center;
             }
 
-            /* MOBILE GRID (Responsive & Compact) */
+            /* --- MOBILE GRID (TOGA MREŽA) --- */
             .multiplication-grid {
-                /* Uporabimo vmin, da se prilagodi ožji stranici ekrana (širina ali višina) */
+                /* Uporabimo fiksno formulo. 
+                   Če mamo 10 stolpcev ali 5, velikost kvadratka se NE spreminja.
+                   To reši problem, da bi se "1. kvadrant" napihnil kot balon. 
+                */
                 grid-template-columns: 24px repeat(10, 1fr);
                 grid-template-rows: 24px repeat(10, auto);
                 gap: 1px;
@@ -190,41 +199,41 @@
             .cell { font-size: 0.7rem; border-radius: 2px; }
             .cell.header { font-size: 0.65rem; padding: 0; }
 
-            /* SIDEBAR V FOOTERJU */
-            /* Ko JS prestavi sidebar v #mobile-footer-slot, dobi te style: */
+            /* SIDEBAR V KLETI */
+            /* Ko je v footerju, mora izgledat tko: */
             .sidebar {
                 width: 100%; 
-                position: static; /* Nič več fixed/sticky, ker je v flex containerju */
+                position: static; /* Nič več fixed/sticky, samo leži v footerju */
                 background: rgba(255, 255, 255, 0.98);
                 border: none; border-top: 1px solid var(--border);
                 border-radius: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
                 
                 padding: 8px 5px;
-                /* Safe Area za iPhone X+ */
+                /* iPhone X+ Safe Area (da ne drsaš po home gumbu) */
                 padding-bottom: max(8px, env(safe-area-inset-bottom));
                 
                 display: flex; justify-content: center; align-items: center;
             }
-            .sidebar h2 { display: none; } /* Skrij naslov na mobitelu */
+            .sidebar h2 { display: none; } /* Naslov 'Števila' je odveč, vemo za kaj gre */
 
             #numbers-container {
-                flex-direction: row; /* Vodoravni gumbi */
+                flex-direction: row; /* Zdej smo vodoravni! */
                 gap: 6px; width: 100%; justify-content: center; max-width: 600px;
             }
 
             .number-option {
-                flex: 0 0 auto; /* Ne razteguj se */
+                flex: 0 0 auto; /* Ne razteguj se, ostani kompakten */
                 width: 42px; height: 42px; font-size: 1.1rem;
             }
         }
 
-        /* Tiny Screens */
+        /* Tiny Screens (za tiste s starimi jajci od telefonov) */
         @media (max-width: 380px) {
             .number-option { width: 36px; height: 36px; font-size: 1rem; }
             .sidebar { padding: 6px 4px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
         }
 
-        /* Modal */
+        /* Win Modal */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
@@ -287,22 +296,22 @@
     </div>
 
     <script>
-        // --- LAYOUT ENGINE: FLEX SENDVIČ ---
-        // Ta skripta fizično premakne sidebar v footer, ko je ekran ozek.
-        // S tem zagotovimo, da gumbi NIKOLI ne prekrivajo tabele.
+        // --- THE TELEPORTER (Layout Magic) ---
+        // Ta funkcija fizično prestavi sidebar v klet (footer), ko je ekran ozek.
+        // S tem zagotovimo, da gumbi NIKOLI ne prekrivajo tabele, ker so v drugem nadstropju.
         function handleLayoutChange() {
             const sidebar = document.getElementById('sidebar');
             const desktopWrapper = document.getElementById('layout-wrapper');
             const mobileSlot = document.getElementById('mobile-footer-slot');
-            const isMobile = window.innerWidth <= 800;
+            const isMobile = window.innerWidth <= 800; // Ista meja kot v CSS
 
             if (isMobile) {
-                // Mobile: Sidebar gre v klet (Footer slot)
+                // Mobile: Sidebar, spokaj v klet!
                 if (sidebar.parentElement !== mobileSlot) {
                     mobileSlot.appendChild(sidebar);
                 }
             } else {
-                // Desktop: Sidebar gre nazaj k mizi (Main wrapper)
+                // Desktop: Sidebar, pridi nazaj gor!
                 if (sidebar.parentElement !== desktopWrapper) {
                     desktopWrapper.appendChild(sidebar);
                 }
@@ -311,7 +320,7 @@
         window.addEventListener('resize', handleLayoutChange);
         window.addEventListener('load', handleLayoutChange);
 
-        // --- GAME LOGIC (Standard) ---
+        // --- STANDARD GAME LOGIC (Dolgočasni del, ki dela) ---
         let isGameRunning = false;
         let startTime = 0;
         let timerInterval;
