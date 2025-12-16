@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Igra Poštevanke - Perfect Fit</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --grid-gap: 3px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- HEADER --- */
+        header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: center; /* Centriramo vsebino */
+            align-items: center;
+            background: var(--bg);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-inner {
+            width: 100%;
+            /* Matchamo max-width s širino igre (Grid + Sidebar) da sta poravnana */
+            max-width: 650px; 
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timer-container {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: var(--surface);
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            order: 1;
+        }
+
+        .mode-container {
+            display: flex; align-items: center; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 8px; padding: 2px; gap: 2px;
+            overflow-x: auto; 
+            order: 2;
+            flex-shrink: 1; 
+            min-width: 0; 
+            scrollbar-width: none;
+        }
+        .mode-container::-webkit-scrollbar { display: none; }
+        
+        .divider { width: 1px; height: 18px; background-color: var(--border); margin: 0 2px; flex-shrink: 0; }
+        
+        .mode-btn {
+            background: transparent; border: none; padding: 4px 8px;
+            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+            color: var(--text-light); white-space: nowrap; display: flex; align-items: center;
+            gap: 4px; flex-shrink: 0;
+        }
+        .mode-btn.active {
+            background: var(--primary); color: white;
+            box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3);
+        }
+
+        button#start-btn {
+            background: var(--primary); color: white; border: none; padding: 6px 14px;
+            font-size: 0.9rem; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap;
+            order: 3;
+        }
+
+        /* --- GAME CONTAINER --- */
+        .game-container {
+            display: flex;
+            gap: 10px;
+            padding: 5px;
+            max-width: 1200px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+            /* Flex-wrap pustimo nowrap, dokler ne udari media query */
+            flex-wrap: nowrap;
+        }
+
+        .grid-wrapper {
+            background: var(--surface);
+            padding: 10px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            /* Dovolimo, da se grid wrapper malo stisne, če je nuja */
+            flex-shrink: 1; 
+            min-width: 0;
+        }
+
+        .multiplication-grid {
+            display: grid;
+            /* MAGIC: Celice so 40px, ampak se lahko stisnejo do 30px preden preklopimo na mobile */
+            grid-template-columns: clamp(30px, 5vw, 40px) repeat(10, 1fr);
+            grid-template-rows: clamp(30px, 5vw, 40px) repeat(10, 1fr);
+            gap: var(--grid-gap);
+        }
+
+        .cell {
+            display: flex; justify-content: center; align-items: center;
+            /* Velikost celic sledi gridu */
+            width: 100%; height: 100%; 
+            aspect-ratio: 1;
+            background: #f1f5f9; border-radius: 6px;
+            font-size: 0.9rem; color: var(--text-light);
+            cursor: default; user-select: none; border: 2px solid transparent;
+        }
+        .cell.header { background: var(--primary); color: white; font-weight: bold; font-size: 1rem; }
+        .cell.playable { cursor: pointer; background: #fff; border: 1px solid #e2e8f0; }
+        .cell.playable:hover { background: #e0e7ff; border-color: var(--primary); }
+        .cell.selected { background: #c7d2fe; border-color: var(--primary); color: var(--primary-dark); font-weight: bold; transform: scale(0.95); }
+        .cell.solved { background: var(--success); color: white; font-weight: bold; border-color: transparent; }
+        .cell.inactive { background: #f8fafc; color: #e2e8f0; border: none; }
+
+        /* --- SIDEBAR (Desktop) --- */
+        .sidebar {
+            width: 100px;
+            flex-shrink: 0; /* Sidebar naj ohrani svojo širino */
+            background: var(--surface);
+            padding: 10px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            text-align: center;
+            position: sticky;
+            top: 10px; 
+        }
+
+        .sidebar h2 { margin-top: 0; margin-bottom: 10px; font-size: 1.1rem; color: var(--text); }
+        
+        #numbers-container { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 6px; 
+            align-items: center; 
+        }
+        
+        .number-option {
+            background: white; 
+            border: 2px solid var(--border); 
+            border-radius: 10px; 
+            font-weight: 800; color: var(--text);
+            cursor: pointer; transition: transform 0.1s;
+            display: flex; justify-content: center; align-items: center;
+            
+            padding: 0; 
+            width: 100%;
+            height: 45px; 
+            font-size: 1.3rem;
+        }
+        .number-option:hover {
+            border-color: var(--secondary); color: var(--secondary); transform: scale(1.05);
+        }
+        .number-option.selected {
+            background: var(--secondary); color: white; border-color: var(--secondary);
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);
+        }
+
+        /* --- MOBILE / TABLET BREAKPOINT (< 680px) --- */
+        /* To je glavni fix: Preklopimo šele, ko je res malo placa */
+        @media (max-width: 680px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+            }
+
+            .header-inner {
+                max-width: 100%;
+                padding: 0 5px;
+            }
+
+            .multiplication-grid {
+                /* Na mobitelu naj celice zasedejo celo širino */
+                grid-template-columns: 8.5vw repeat(10, 1fr);
+                grid-template-rows: 8.5vw repeat(10, 1fr);
+                gap: 1px;
+            }
+            .cell { font-size: 0.7rem; border-radius: 3px; }
+            .grid-wrapper { padding: 0; width: 100%; border: none; background: transparent; box-shadow: none; }
+
+            /* --- FIXED BOTTOM BAR --- */
+            .sidebar {
+                position: fixed;
+                bottom: 0; left: 0; width: 100%; height: auto;
+                display: flex; flex-direction: row; justify-content: center; align-items: center;
+                background: rgba(255, 255, 255, 0.98);
+                border-top: 1px solid var(--border);
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+                border-radius: 12px 12px 0 0;
+                
+                padding: 6px 4px;
+                padding-bottom: max(6px, env(safe-area-inset-bottom));
+                z-index: 100;
+            }
+            .sidebar h2 { display: none; }
+
+            #numbers-container {
+                flex-direction: row; width: 100%; justify-content: center; 
+                gap: 4px;
+                max-width: 600px;
+            }
+
+            .number-option {
+                flex: 0 0 auto; 
+                width: 40px;    
+                height: 40px;   
+                font-size: 1.1rem;
+                padding: 0;
+                margin: 0;
+            }
+        }
+        
+        /* Zelo majhni ekrani (iPhone SE) */
+        @media (max-width: 380px) {
+            .number-option { width: 34px; height: 34px; font-size: 0.9rem; }
+            .sidebar { padding: 4px; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal {
+            background: white; padding: 30px; border-radius: 20px;
+            text-align: center; width: 85%; max-width: 350px;
+        }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%,75%{transform:translateX(-5px)} 50%{transform:translateX(5px)} }
+        .shake-screen { animation: shake 0.3s ease-in-out; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-inner">
+            <div class="timer-container" id="timer">00:00.00</div>
+            
+            <div class="mode-container">
+                <button class="mode-btn active" onclick="setMode('all', this)">VSE</button>
+                <div class="divider"></div>
+                <button class="mode-btn" onclick="setMode('top', this)"><span>⬆</span> 1-5</button>
+                <button class="mode-btn" onclick="setMode('bottom', this)"><span>⬇</span> 6-10</button>
+                <div class="divider"></div>
+                <button class="mode-btn" onclick="setMode('q1', this)">1</button>
+                <button class="mode-btn" onclick="setMode('q2', this)">2</button>
+                <button class="mode-btn" onclick="setMode('q3', this)">3</button>
+                <button class="mode-btn" onclick="setMode('q4', this)">4</button>
+            </div>
+
+            <button id="start-btn" onclick="startGame()">Nova</button>
+        </div>
+    </header>
+
+    <div class="game-container">
+        <div class="grid-wrapper">
+            <div class="multiplication-grid" id="grid"></div>
+        </div>
+        <div class="sidebar" id="sidebar">
+            <h2>Števila</h2>
+            <div id="numbers-container"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="win-modal">
+        <div class="modal">
+            <h2>Bravo!</h2>
+            <p>Čas:<br><strong id="final-time" style="font-size: 2rem; color: var(--primary);">00:00.00</strong></p>
+            <button id="start-btn-modal" onclick="startGame()" style="background: var(--success); color: white; border:none; padding: 15px 30px; border-radius: 8px; font-size: 1.2rem; cursor: pointer;">Igraj ponovno</button>
+        </div>
+    </div>
+
+    <script>
+        // --- JS Logic ---
+        function adjustLayout() {
+            const sidebar = document.getElementById('sidebar');
+            const style = window.getComputedStyle(sidebar);
+            if (style.position === 'fixed') {
+                const h = sidebar.offsetHeight;
+                document.body.style.paddingBottom = (h + 30) + 'px';
+            } else {
+                document.body.style.paddingBottom = '20px';
+            }
+        }
+        window.addEventListener('resize', adjustLayout);
+        window.addEventListener('load', adjustLayout);
+        setInterval(adjustLayout, 500);
+
+        let isGameRunning = false;
+        let startTime = 0;
+        let timerInterval;
+        let selectedCell = null;
+        let selectedNumberIdx = null;
+        let gridData = []; 
+        let currentHand = [];
+        let currentMode = 'all'; 
+
+        const gridEl = document.getElementById('grid');
+        const numbersContainer = document.getElementById('numbers-container');
+        const timerEl = document.getElementById('timer');
+        const modal = document.getElementById('win-modal');
+
+        function setMode(mode, btnEl) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            if(btnEl) btnEl.classList.add('active');
+            startGame();
+        }
+
+        function getBounds() {
+            let minR=1, maxR=10, minC=1, maxC=10;
+            if (currentMode === 'top') { maxR = 5; }             
+            else if (currentMode === 'bottom') { minR = 6; }     
+            else if (currentMode === 'q1') { maxR=5; maxC=5; }   
+            else if (currentMode === 'q2') { maxR=5; minC=6; }   
+            else if (currentMode === 'q3') { minR=6; maxC=5; }   
+            else if (currentMode === 'q4') { minR=6; minC=6; }   
+            return { minR, maxR, minC, maxC };
+        }
+
+        function initGrid() {
+            gridEl.innerHTML = '';
+            const corner = document.createElement('div');
+            corner.className = 'cell header';
+            corner.innerText = '×';
+            gridEl.appendChild(corner);
+
+            for (let i = 1; i <= 10; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell header';
+                cell.innerText = i;
+                gridEl.appendChild(cell);
+            }
+
+            const { minR, maxR, minC, maxC } = getBounds();
+
+            for (let r = 1; r <= 10; r++) {
+                const rowHeader = document.createElement('div');
+                rowHeader.className = 'cell header';
+                rowHeader.innerText = r;
+                gridEl.appendChild(rowHeader);
+
+                for (let c = 1; c <= 10; c++) {
+                    const cell = document.createElement('div');
+                    const isActive = (r >= minR && r <= maxR && c >= minC && c <= maxC);
+                    if (isActive) {
+                        cell.className = 'cell playable';
+                        cell.onclick = () => handleCellClick(r, c, cell);
+                    } else {
+                        cell.className = 'cell inactive';
+                    }
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.innerText = `${r}×${c}`;
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        function startGame() {
+            isGameRunning = true;
+            gridData = Array(11).fill(null).map(() => Array(11).fill(false)); 
+            currentHand = [];
+            selectedCell = null;
+            selectedNumberIdx = null;
+            modal.classList.remove('active');
+            initGrid();
+            refillHand();
+            startTimer();
+            setTimeout(adjustLayout, 100);
+        }
+
+        function refillHand() {
+            const { minR, maxR, minC, maxC } = getBounds();
+            let emptySpots = [];
+            for(let r=minR; r<=maxR; r++){
+                for(let c=minC; c<=maxC; c++){
+                    if(!gridData[r][c]) {
+                        emptySpots.push({ r, c, val: r * c });
+                    }
+                }
+            }
+            emptySpots = emptySpots.filter(spot => {
+                return !currentHand.some(handItem => handItem.r === spot.r && handItem.c === spot.c);
+            });
+            shuffleArray(emptySpots);
+            while (currentHand.length < 5 && emptySpots.length > 0) {
+                currentHand.push(emptySpots.pop());
+            }
+            renderSidebar();
+        }
+
+        function renderSidebar() {
+            numbersContainer.innerHTML = '';
+            currentHand.forEach((item, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'number-option';
+                if (index === selectedNumberIdx) btn.classList.add('selected');
+                btn.innerText = item.val;
+                btn.onclick = () => handleNumberClick(index);
+                numbersContainer.appendChild(btn);
+            });
+            setTimeout(adjustLayout, 50);
+        }
+
+        function handleCellClick(r, c, cellEl) {
+            if (!isGameRunning) return;
+            if (gridData[r][c]) return; 
+            const prev = document.querySelector('.cell.selected');
+            if (prev) prev.classList.remove('selected');
+            cellEl.classList.add('selected');
+            selectedCell = { r, c, el: cellEl };
+            if (selectedNumberIdx !== null) checkMatch();
+        }
+
+        function handleNumberClick(index) {
+            if (!isGameRunning) return;
+            selectedNumberIdx = index;
+            renderSidebar(); 
+            if (selectedCell) checkMatch();
+        }
+
+        function checkMatch() {
+            const r = selectedCell.r;
+            const c = selectedCell.c;
+            const correctVal = r * c;
+            const handItem = currentHand[selectedNumberIdx];
+            if (correctVal === handItem.val) {
+                handleCorrect(handItem);
+            } else {
+                handleWrong();
+            }
+        }
+
+        function handleCorrect(handItem) {
+            selectedCell.el.classList.remove('selected');
+            selectedCell.el.classList.remove('playable');
+            selectedCell.el.classList.add('solved');
+            selectedCell.el.innerText = handItem.val;
+            gridData[selectedCell.r][selectedCell.c] = true;
+            currentHand.splice(selectedNumberIdx, 1);
+            selectedCell = null;
+            selectedNumberIdx = null;
+            refillHand();
+            checkWin();
+        }
+
+        function handleWrong() {
+            document.body.classList.add('shake-screen');
+            setTimeout(() => document.body.classList.remove('shake-screen'), 500);
+            if(selectedCell) selectedCell.el.classList.remove('selected');
+            selectedNumberIdx = null;
+            selectedCell = null;
+            renderSidebar();
+        }
+
+        function checkWin() {
+            const { minR, maxR, minC, maxC } = getBounds();
+            const totalCells = (maxR - minR + 1) * (maxC - minC + 1);
+            let filled = 0;
+            for(let r=minR; r<=maxR; r++) {
+                for(let c=minC; c<=maxC; c++) {
+                    if(gridData[r][c]) filled++;
+                }
+            }
+            if(filled === totalCells) {
+                stopTimer();
+                isGameRunning = false;
+                document.getElementById('final-time').innerText = timerEl.innerText;
+                setTimeout(() => modal.classList.add('active'), 500);
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 30);
+        }
+        function stopTimer() { clearInterval(timerInterval); }
+        function updateTimer() {
+            const now = Date.now();
+            const diff = now - startTime;
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            const centis = Math.floor((diff % 1000) / 10);
+            timerEl.innerText = `${pad(minutes)}:${pad(seconds)}.${pad(centis)}`;
+        }
+        function pad(num) { return num.toString().padStart(2, '0'); }
+
+        startGame();
+    </script>
+</body>
+</html>
