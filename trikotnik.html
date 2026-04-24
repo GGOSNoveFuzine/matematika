@@ -15,15 +15,14 @@
             flex-direction: column; 
             align-items: center; 
         }
-        /* Vrnjena stabilna CSS struktura, max-width prilagojen za večje ekrane */
+        /* Stari, stabilni CSS za panel in vrstice */
         .panel { 
             background: white; 
             padding: 20px; 
             border-radius: 10px; 
             box-shadow: 0 6px 12px rgba(0,0,0,0.08); 
             margin-bottom: 15px; 
-            width: 100%; 
-            max-width: 1400px; 
+            width: 900px; /* Fiksna širina za panel, da se inputi ne mečkajo */
             box-sizing: border-box; 
         }
         .row { 
@@ -35,8 +34,9 @@
         }
         .row:last-child { margin-bottom: 0; }
         
-        input[type="number"] { width: 65px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input[type="number"] { width: 65px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;}
         select { padding: 6px; border-radius: 4px; font-size: 14px; cursor: pointer; max-width: 350px;}
+        
         button { padding: 8px 16px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; background-color: #0d6efd; }
         button:hover { background-color: #0b5ed7; }
         button:disabled { background-color: #cccccc; cursor: not-allowed; }
@@ -62,12 +62,11 @@
         
         .input-group { background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border: 1px solid #dee2e6; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;}
         
+        /* Platno je lahko sedaj večje od panela zgoraj */
         #canvas-container {
             width: 100%;
             display: flex;
             justify-content: center;
-            overflow: hidden; /* Da ne scrolla strani pri premikanju */
-            touch-action: none; /* Za mobilce, da omogoča pan/zoom brez osveževanja strani */
         }
         canvas { 
             border-radius: 10px; 
@@ -80,7 +79,7 @@
 
     <div class="panel">
         <div class="row">
-            <label><strong>Podatki:</strong></label>
+            <label><strong>Tip konstrukcije:</strong></label>
             <select id="constType">
                 <optgroup label="0 Višin (Klasika)">
                     <option value="SSS">3 Stranice (SSS)</option>
@@ -90,7 +89,7 @@
                 </optgroup>
                 <optgroup label="1 Višina">
                     <option value="c_a_hc">2 Stranici, Višina na osnovnico</option>
-                    <option value="c_a_ha">2 Stranici, Višina na eno od njiju</option>
+                    <option value="c_a_ha">2 Stranici, Višina na drugo stranico</option>
                     <option value="c_hc_A">1 Stranica, Višina nanjo, Priležni kot</option>
                     <option value="c_hc_C">1 Stranica, Višina nanjo, Nasprotni kot</option>
                     <option value="c_ha_A">1 Stranica, Višina na drugo, Kot</option>
@@ -102,6 +101,13 @@
                     <option value="ha_hb_C">2 Višini, Vmesni Kot</option>
                     <option value="ha_hb_A">2 Višini, Drugi Kot</option>
                 </optgroup>
+            </select>
+            
+            <label style="margin-left: 10px;"><strong>Osnovnica je:</strong></label>
+            <select id="baseChoice">
+                <option value="c">Stranica c (Spodaj sta A in B)</option>
+                <option value="a">Stranica a (Spodaj sta B in C)</option>
+                <option value="b">Stranica b (Spodaj sta C in A)</option>
             </select>
             
             <div id="dynamic-inputs" class="input-group"></div>
@@ -121,54 +127,76 @@
         <button class="btn-step" id="btnPrevStep" disabled>◀ Prejšnji korak</button>
         <button class="btn-step" id="btnNextStep" disabled>▶ Naslednji korak</button>
         <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" id="autoPlay" style="width:18px; height:18px; vertical-align: middle;"> Auto-Play</label>
-        <div id="instruction-box">Čakam na začetne podatke...</div>
+        <div id="instruction-box">Izberi podatke in klikni Nariši osnovni trikotnik.</div>
     </div>
 
     <div id="canvas-container"></div>
 
     <script>
-        const inputConfigs = {
-            'SSS': ['Stranica a|a|15', 'Stranica b|b|13', 'Osnovnica c|c|14'],
-            'SAS': ['Osnovnica c|c|14', 'Kot A (°)|A|60', 'Stranica b|b|13'],
-            'ASA': ['Kot A (°)|A|60', 'Osnovnica c|c|14', 'Kot B (°)|B|50'],
-            'SSA': ['Osnovnica c|c|14', 'Kot A (°)|A|45', 'Stranica a|a|12'],
-            'c_a_hc': ['Osnovnica c|c|14', 'Stranica a|a|13', 'Višina hc|hc|12'],
-            'c_a_ha': ['Osnovnica c|c|14', 'Stranica a|a|13', 'Višina ha|ha|11'],
-            'c_hc_A': ['Osnovnica c|c|14', 'Višina hc|hc|12', 'Kot A (°)|A|65'],
-            'c_hc_C': ['Osnovnica c|c|14', 'Višina hc|hc|12', 'Kot C (°)|C|55'],
-            'c_ha_A': ['Osnovnica c|c|14', 'Višina ha|ha|12', 'Kot A (°)|A|65'],
-            'A_B_hc': ['Kot A (°)|A|65', 'Kot B (°)|B|55', 'Višina hc|hc|12'],
-            'a_ha_hb': ['Stranica a|a|15', 'Višina ha|ha|12', 'Višina hb|hb|11'],
-            'c_ha_hb': ['Osnovnica c|c|14', 'Višina ha|ha|12', 'Višina hb|hb|11'],
-            'ha_hb_C': ['Višina ha|ha|9', 'Višina hb|hb|7', 'Kot C (°)|C|45'],
-            'ha_hb_A': ['Višina ha|ha|12', 'Višina hb|hb|11', 'Kot A (°)|A|65']
+        const genericConfigs = {
+            'SSS': ['base|14', 'left|13', 'right|15'],
+            'SAS': ['base|14', 'angL|60', 'left|13'],
+            'ASA': ['angL|60', 'base|14', 'angR|50'],
+            'SSA': ['base|14', 'angL|45', 'right|12'],
+            'c_a_hc': ['base|14', 'right|13', 'hBase|12'], 
+            'c_a_ha': ['base|14', 'right|13', 'hRight|11'], 
+            'c_hc_A': ['base|14', 'hBase|12', 'angL|65'], 
+            'c_hc_C': ['base|14', 'hBase|12', 'angT|55'], 
+            'c_ha_A': ['base|14', 'hRight|12', 'angL|65'], 
+            'A_B_hc': ['angL|65', 'angR|55', 'hBase|12'], 
+            'a_ha_hb': ['right|15', 'hRight|12', 'hLeft|11'], 
+            'c_ha_hb': ['base|14', 'hRight|12', 'hLeft|11'], 
+            'ha_hb_C': ['hRight|9', 'hLeft|7', 'angT|45'], 
+            'ha_hb_A': ['hRight|12', 'hLeft|11', 'angL|65'] 
         };
 
-        // State variablice
-        let SCALE = 20; let OFFSET_X = 150; let OFFSET_Y = 480; 
-        let zoom = 1.0; let panX = 0; let panY = 0;
+        function getParamLabel(param, baseChoice) {
+            if (baseChoice === 'c') {
+                switch(param) {
+                    case 'base': return 'Stranica c'; case 'left': return 'Stranica b'; case 'right': return 'Stranica a';
+                    case 'angL': return 'Kot pri A (°)'; case 'angR': return 'Kot pri B (°)'; case 'angT': return 'Kot pri C (°)';
+                    case 'hBase': return 'Višina na c (vc)'; case 'hLeft': return 'Višina na b (vb)'; case 'hRight': return 'Višina na a (va)';
+                }
+            } else if (baseChoice === 'a') {
+                switch(param) {
+                    case 'base': return 'Stranica a'; case 'left': return 'Stranica c'; case 'right': return 'Stranica b';
+                    case 'angL': return 'Kot pri B (°)'; case 'angR': return 'Kot pri C (°)'; case 'angT': return 'Kot pri A (°)';
+                    case 'hBase': return 'Višina na a (va)'; case 'hLeft': return 'Višina na c (vc)'; case 'hRight': return 'Višina na b (vb)';
+                }
+            } else if (baseChoice === 'b') {
+                switch(param) {
+                    case 'base': return 'Stranica b'; case 'left': return 'Stranica a'; case 'right': return 'Stranica c';
+                    case 'angL': return 'Kot pri C (°)'; case 'angR': return 'Kot pri A (°)'; case 'angT': return 'Kot pri B (°)';
+                    case 'hBase': return 'Višina na b (vb)'; case 'hLeft': return 'Višina na a (va)'; case 'hRight': return 'Višina na c (vc)';
+                }
+            }
+        }
+
+        let SCALE = 20; let zoom = 1.0; let panX = 0; let panY = 0;
         let animQueue = []; let completedShapes = []; let baseTriangleShapes = []; 
         let currentAnim = null; let isPaused = true;
         let ptA, ptB, ptC;
+        
+        let lbl1 = 'A', lbl2 = 'B', lbl3 = 'C';
+        let nBase = 'c', nLeft = 'b', nRight = 'a';
 
         function setup() {
-            // Pametni breakpointi glede na resolucijo uporabnika
             let cW, cH;
             let wW = windowWidth;
             
+            // "Stopničke" za velikost platna ob nalaganju strani
             if (wW >= 3000) { cW = 2400; cH = 1400; } // 4K Smart Board
             else if (wW >= 1800) { cW = 1400; cH = 800; } // 1080p
             else if (wW >= 1200) { cW = 1000; cH = 650; } // Desktop
-            else { cW = wW - 40; cH = windowHeight * 0.6; } // Mobile/Tablet
+            else { cW = wW - 40; cH = 500; } // Mobile/Tablet
 
             let canvas = createCanvas(cW, cH);
             canvas.parent('canvas-container');
             
-            // Fiksiramo sredino glede na platno
-            panX = width / 2;
-            panY = height * 0.7;
+            panX = width / 2; panY = height * 0.7;
 
             document.getElementById('constType').addEventListener('change', buildInputs);
+            document.getElementById('baseChoice').addEventListener('change', buildInputs);
             buildInputs(); 
 
             document.getElementById('btnDraw').addEventListener('click', startTriangleConstruction);
@@ -182,29 +210,33 @@
             document.getElementById('btnPrevStep').addEventListener('click', stepBack);
         }
 
-        // --- PAN & ZOOM logike ---
+        // Brez windowResized(), ohranimo velikost!
+        
         function mouseWheel(event) {
             if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
-                zoom -= event.delta * 0.001;
-                zoom = constrain(zoom, 0.2, 5.0);
-                return false; // prepreči page scroll
+                zoom -= event.delta * 0.001; zoom = constrain(zoom, 0.2, 5.0);
+                return false;
             }
         }
-
         function mouseDragged() {
             if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
-                panX += mouseX - pmouseX;
-                panY += mouseY - pmouseY;
-                return false; // super za mobilni touch drag
+                if (mouseButton === RIGHT || (touches.length > 0)) {
+                    panX += mouseX - pmouseX; panY += mouseY - pmouseY;
+                    return false;
+                }
             }
         }
 
         function buildInputs() {
             let type = document.getElementById('constType').value;
+            let baseChoice = document.getElementById('baseChoice').value;
             let html = '';
-            inputConfigs[type].forEach(item => {
+            genericConfigs[type].forEach(item => {
                 let parts = item.split('|');
-                html += `<div>${parts[0]}: <input type="number" id="val_${parts[1]}" value="${parts[2]}"></div>`;
+                let varName = parts[0];
+                let defaultValue = parts[1];
+                let displayName = getParamLabel(varName, baseChoice);
+                html += `<div style="display:flex; align-items:center; gap:5px;"><label>${displayName}:</label> <input type="number" id="val_${varName}" value="${defaultValue}"></div>`;
             });
             document.getElementById('dynamic-inputs').innerHTML = html;
         }
@@ -214,17 +246,10 @@
         function stepBack() {
             isPaused = true;
             document.getElementById('autoPlay').checked = false; 
-            
-            if (currentAnim) {
-                currentAnim.progress = 0;
-                animQueue.unshift(currentAnim);
-                currentAnim = null;
-            }
-            
+            if (currentAnim) { currentAnim.progress = 0; animQueue.unshift(currentAnim); currentAnim = null; }
             if (completedShapes.length > 0) {
                 let lastShape = completedShapes.pop();
-                lastShape.progress = 0;
-                animQueue.unshift(lastShape);
+                lastShape.progress = 0; animQueue.unshift(lastShape);
                 setInstruction(lastShape.desc || "Gremo nazaj...");
                 document.getElementById('btnNextStep').disabled = false;
             }
@@ -232,39 +257,24 @@
 
         function draw() {
             background(255);
-            
-            push();
-            translate(panX, panY);
-            scale(zoom);
+            push(); translate(panX, panY); scale(zoom);
 
             for (let shape of completedShapes) { renderShape(shape, 1); }
-
             document.getElementById('btnPrevStep').disabled = (completedShapes.length === 0 && !currentAnim);
 
             if (currentAnim) {
                 renderShape(currentAnim, currentAnim.progress);
                 currentAnim.progress += currentAnim.speed;
-                
                 if (currentAnim.progress >= 1) {
                     currentAnim.progress = 1;
                     completedShapes.push({...currentAnim}); 
                     currentAnim = null; 
-                    
-                    if (!document.getElementById('autoPlay').checked) {
-                        isPaused = true;
-                        if (animQueue.length > 0) document.getElementById('btnNextStep').disabled = false;
-                    }
-                    
+                    if (!document.getElementById('autoPlay').checked) { isPaused = true; if (animQueue.length > 0) document.getElementById('btnNextStep').disabled = false; }
                     if (animQueue.length === 0) {
                         setInstruction("Konstrukcija je zaključena.");
                         document.getElementById('btnNextStep').disabled = true;
-                        
-                        if (baseTriangleShapes.length === 0) {
-                            baseTriangleShapes = completedShapes.map(s => ({...s})); 
-                        }
-                        
-                        document.querySelectorAll('.btn-center').forEach(btn => btn.disabled = false);
-                        document.getElementById('btnReset').disabled = false;
+                        if (baseTriangleShapes.length === 0) baseTriangleShapes = completedShapes.map(s => ({...s})); 
+                        document.querySelectorAll('.btn-center, .btn-reset').forEach(btn => btn.disabled = false);
                     }
                 }
             } else if (!isPaused && animQueue.length > 0) {
@@ -277,13 +287,11 @@
         function renderShape(shape, t) {
             push();
             if (shape.type === 'cue') {
-                let alpha = map(t, 0, 1, 255, 0);
-                let maxD = shape.r * 2;
+                let alpha = map(t, 0, 1, 255, 0); let maxD = shape.r * 2;
                 fill(255, 69, 0, alpha * 0.4); noStroke(); circle(shape.x, shape.y, map(t, 0, 1, 5, maxD * 0.4));
-                noFill(); stroke(255, 69, 0, alpha); strokeWeight(3/zoom);
-                circle(shape.x, shape.y, map(t, 0, 1, 0, maxD));
-                if (t > 0.15) { let d2 = map(t, 0.15, 1, 0, maxD * 0.85); strokeWeight(map(t, 0.15, 1, 4/zoom, 0.5/zoom)); circle(shape.x, shape.y, d2); }
-                if (t > 0.3) { let d3 = map(t, 0.3, 1, 0, maxD * 0.65); strokeWeight(map(t, 0.3, 1, 3/zoom, 0.2/zoom)); circle(shape.x, shape.y, d3); }
+                noFill(); stroke(255, 69, 0, alpha); strokeWeight(3/zoom); circle(shape.x, shape.y, map(t, 0, 1, 0, maxD));
+                if (t > 0.15) { strokeWeight(map(t, 0.15, 1, 4/zoom, 0.5/zoom)); circle(shape.x, shape.y, map(t, 0.15, 1, 0, maxD * 0.85)); }
+                if (t > 0.3) { strokeWeight(map(t, 0.3, 1, 3/zoom, 0.2/zoom)); circle(shape.x, shape.y, map(t, 0.3, 1, 0, maxD * 0.65)); }
             } else if (shape.type === 'line') {
                 stroke(shape.color || 0); strokeWeight((shape.weight || 2)/zoom);
                 if (shape.dashed) drawingContext.setLineDash([5/zoom, 5/zoom]);
@@ -297,7 +305,7 @@
                 arc(shape.x, shape.y, shape.r * 2, shape.r * 2, Math.min(shape.startAng, currentSweep), Math.max(shape.startAng, currentSweep));
             } else if (shape.type === 'point' && t >= 1) {
                 fill(shape.color || 0); noStroke(); circle(shape.x, shape.y, 8/zoom);
-                textSize(16/zoom); text(shape.label, shape.x - 15/zoom, shape.y - 15/zoom);
+                textSize(18/zoom); textStyle(BOLD); text(shape.label, shape.x - 15/zoom, shape.y - 15/zoom);
             }
             pop();
         }
@@ -306,123 +314,116 @@
             let a1 = B.y - A.y, b1 = A.x - B.x, c1 = a1 * A.x + b1 * A.y;
             let a2 = D.y - C.y, b2 = C.x - D.x, c2 = a2 * C.x + b2 * C.y;
             let det = a1 * b2 - a2 * b1;
-            if (det === 0) return {x: A.x, y: A.y}; 
-            return { x: (b2 * c1 - b1 * c2) / det, y: (a1 * c2 - a2 * c1) / det };
+            return det === 0 ? {x: A.x, y: A.y} : { x: (b2 * c1 - b1 * c2) / det, y: (a1 * c2 - a2 * c1) / det };
         }
-
         function fRnd(val) { return Number(val.toFixed(1)); }
 
         function startTriangleConstruction() {
             let type = document.getElementById('constType').value;
+            let bc = document.getElementById('baseChoice').value;
             
+            if (bc === 'c') { lbl1='A'; lbl2='B'; lbl3='C'; nBase='c'; nLeft='b'; nRight='a'; }
+            else if (bc === 'a') { lbl1='B'; lbl2='C'; lbl3='A'; nBase='a'; nLeft='c'; nRight='b'; }
+            else if (bc === 'b') { lbl1='C'; lbl2='A'; lbl3='B'; nBase='b'; nLeft='a'; nRight='c'; }
+
             animQueue = []; completedShapes = []; baseTriangleShapes = []; currentAnim = null;
             isPaused = !document.getElementById('autoPlay').checked;
-            
-            document.querySelectorAll('.btn-center').forEach(btn => btn.disabled = true);
-            document.getElementById('btnReset').disabled = true;
-            
+            document.querySelectorAll('.btn-center, .btn-reset').forEach(btn => btn.disabled = true);
             document.getElementById('btnNextStep').disabled = isPaused ? false : true;
-            if (isPaused) setInstruction("Klikni '▶ Naslednji korak' za začetek.");
+            if (isPaused) setInstruction("Klikni '▶ Naprej' za začetek.");
 
-            let getVal = (id) => { let el = document.getElementById('val_' + id); return el ? parseFloat(el.value) : null; };
-            let a = getVal('a'), b = getVal('b'), c = getVal('c');
-            let A = getVal('A') ? getVal('A') * Math.PI / 180 : null;
-            let B = getVal('B') ? getVal('B') * Math.PI / 180 : null;
-            let C = getVal('C') ? getVal('C') * Math.PI / 180 : null;
-            let ha = getVal('ha'), hb = getVal('hb'), hc = getVal('hc');
+            let g = (id) => { let el = document.getElementById('val_' + id); return el ? parseFloat(el.value) : null; };
+            
+            let c = g('base'), b = g('left'), a = g('right');
+            let A = g('angL') ? g('angL')*PI/180 : null, B = g('angR') ? g('angR')*PI/180 : null, C = g('angT') ? g('angT')*PI/180 : null;
+            let hc = g('hBase'), hb = g('hLeft'), ha = g('hRight');
 
             let side_c, side_b, angA, calc_a; 
 
             try {
                 if (type === 'ha_hb_C') {
-                    a = hb / Math.sin(C); b = ha / Math.sin(C);
-                    side_c = Math.sqrt(a*a + b*b - 2*a*b*Math.cos(C)); side_b = b; angA = Math.asin(a*Math.sin(C)/side_c); calc_a = a;
+                    a = hb / sin(C); b = ha / sin(C);
+                    side_c = sqrt(a*a + b*b - 2*a*b*cos(C)); side_b = b; angA = asin(a*sin(C)/side_c); calc_a = a;
                 } else {
                     switch(type) {
-                        case 'SSS': side_c = c; side_b = b; angA = Math.acos((b*b+c*c-a*a)/(2*b*c)); break;
+                        case 'SSS': side_c = c; side_b = b; angA = acos((b*b+c*c-a*a)/(2*b*c)); break;
                         case 'SAS': side_c = c; side_b = b; angA = A; break;
-                        case 'ASA': C = Math.PI - A - B; side_c = c; side_b = c * Math.sin(B) / Math.sin(C); angA = A; break;
-                        case 'SSA': C = Math.asin(c * Math.sin(A) / a); B = Math.PI - A - C; side_c = c; side_b = a * Math.sin(B) / Math.sin(A); angA = A; break;
-                        case 'c_a_hc': let xc = c - Math.sqrt(a*a - hc*hc); side_c = c; side_b = Math.sqrt(xc*xc + hc*hc); angA = Math.atan2(hc, xc); break;
-                        case 'c_a_ha': B = Math.asin(ha / c); C = Math.asin(ha / a); angA = Math.PI - B - C; side_c = c; side_b = a * Math.sin(B) / Math.sin(angA); break;
-                        case 'c_hc_A': side_c = c; side_b = hc / Math.sin(A); angA = A; break;
-                        case 'c_hc_C': let R = c / (2 * Math.sin(C)); let yo = -(c / 2) / Math.tan(C); let xc2 = c/2 - Math.sqrt(R*R - Math.pow(hc - yo, 2)); side_c = c; side_b = Math.sqrt(xc2*xc2 + hc*hc); angA = Math.atan2(hc, xc2); break;
-                        case 'c_ha_A': B = Math.asin(ha / c); C = Math.PI - A - B; side_c = c; side_b = c * Math.sin(B) / Math.sin(C); angA = A; break;
-                        case 'A_B_hc': side_b = hc / Math.sin(A); C = Math.PI - A - B; side_c = side_b * Math.sin(C) / Math.sin(B); angA = A; break;
-                        case 'a_ha_hb': C = Math.asin(hb / a); side_b = a * ha / hb; side_c = Math.sqrt(a*a + side_b*side_b - 2*a*side_b*Math.cos(C)); angA = Math.asin(a * Math.sin(C) / side_c); break;
-                        case 'c_ha_hb': angA = Math.asin(hb / c); B = Math.asin(ha / c); C = Math.PI - angA - B; side_c = c; side_b = c * Math.sin(B) / Math.sin(C); break;
-                        case 'ha_hb_A': side_c = hb / Math.sin(A); B = Math.asin(ha / side_c); C = Math.PI - A - B; side_b = side_c * Math.sin(B) / Math.sin(C); angA = A; break;
+                        case 'ASA': C = PI - A - B; side_c = c; side_b = c * sin(B) / sin(C); angA = A; break;
+                        case 'SSA': C = asin(c * sin(A) / a); B = PI - A - C; side_c = c; side_b = a * sin(B) / sin(A); angA = A; break;
+                        case 'c_a_hc': let xc = c - sqrt(a*a - hc*hc); side_c = c; side_b = sqrt(xc*xc + hc*hc); angA = atan2(hc, xc); break;
+                        case 'c_a_ha': B = asin(ha / c); C = asin(ha / a); angA = PI - B - C; side_c = c; side_b = a * sin(B) / sin(angA); break;
+                        case 'c_hc_A': side_c = c; side_b = hc / sin(A); angA = A; break;
+                        case 'c_hc_C': let R = c / (2 * sin(C)); let yo = -(c / 2) / tan(C); let xc2 = c/2 - sqrt(R*R - pow(hc - yo, 2)); side_c = c; side_b = sqrt(xc2*xc2 + hc*hc); angA = atan2(hc, xc2); break;
+                        case 'c_ha_A': B = asin(ha / c); C = PI - A - B; side_c = c; side_b = c * sin(B) / sin(C); angA = A; break;
+                        case 'A_B_hc': side_b = hc / sin(A); C = PI - A - B; side_c = side_b * sin(C) / sin(B); angA = A; break;
+                        case 'a_ha_hb': C = asin(hb / a); side_b = a * ha / hb; side_c = sqrt(a*a + side_b*side_b - 2*a*side_b*cos(C)); angA = asin(a * sin(C) / side_c); break;
+                        case 'c_ha_hb': angA = asin(hb / c); B = asin(ha / c); C = PI - angA - B; side_c = c; side_b = c * sin(B) / sin(C); break;
+                        case 'ha_hb_A': side_c = hb / sin(A); B = asin(ha / side_c); C = PI - A - B; side_b = side_c * sin(B) / sin(C); angA = A; break;
                     }
-                    calc_a = Math.sqrt(side_b*side_b + side_c*side_c - 2*side_b*side_c*Math.cos(angA));
+                    calc_a = sqrt(side_b*side_b + side_c*side_c - 2*side_b*side_c*cos(angA));
                 }
 
                 if(isNaN(side_c) || isNaN(side_b) || isNaN(angA)) throw "S temi podatki trikotnika sploh ni mogoče sestavit bro.";
 
-                // Scale se prilagodi dejanskemu platnu
                 SCALE = (width * 0.4) / Math.max(side_c, side_b, calc_a); 
-                
-                // Resetiramo pan, da je vedno v sredini, ko pritisnemo Nariši
-                zoom = 1.0;
-                panX = width / 2;
-                panY = height * 0.7;
+                zoom = 1.0; panX = width / 2; panY = height * 0.7;
 
                 ptA = { x: -(side_c * SCALE)/2, y: 0 };
                 ptB = { x: (side_c * SCALE)/2, y: 0 };
-                ptC = { x: ptA.x + side_b * SCALE * Math.cos(angA), y: - side_b * SCALE * Math.sin(angA) };
+                ptC = { x: ptA.x + side_b * SCALE * cos(angA), y: - side_b * SCALE * sin(angA) };
 
                 if (type === 'ha_hb_C') {
                     ptC = { x: 0, y: -(calc_a * SCALE)/2 };
                     ptB = { x: ptC.x + calc_a * SCALE, y: ptC.y };
                     ptA = { x: ptC.x + side_b * SCALE * Math.cos(C), y: ptC.y - side_b * SCALE * Math.sin(C) };
                     
-                    queuePoint(ptC.x, ptC.y, 'C', '#000', "Začnemo konstruirati pri točki C.", true);
-                    queueLine(ptC.x, ptC.y, ptC.x + width, ptC.y, '#aaa', 1, true, "Iz C potegnemo poltrak za stranico a.");
-                    queueLine(ptC.x, ptC.y, ptC.x + width*Math.cos(C), ptC.y - width*Math.sin(C), '#aaa', 1, true, `Narišemo poltrak za stranico b pod danim kotom C.`);
+                    queuePoint(ptC.x, ptC.y, lbl3, '#000', `Začnemo konstruirati pri točki ${lbl3}.`, true);
+                    queueLine(ptC.x, ptC.y, ptC.x + width, ptC.y, '#aaa', 1, true, `Iz ${lbl3} potegnemo poltrak za stranico ${nRight}.`);
+                    queueLine(ptC.x, ptC.y, ptC.x + width*Math.cos(C), ptC.y - width*Math.sin(C), '#aaa', 1, true, `Narišemo poltrak za stranico ${nLeft} pod danim kotom.`);
                     
                     let ha_y = ptC.y - ha * SCALE;
-                    queueLine(ptC.x - 50, ha_y, ptC.x + width, ha_y, '#3498db', 1, true, `Potegnemo vzporednico stranici a na razdalji ha = ${fRnd(ha)}.`);
-                    queuePoint(ptA.x, ptA.y, 'A', '#000', "Presečišče poltraka in vzporednice nam sfiksira točko A.", true);
+                    queueLine(ptC.x - 50, ha_y, ptC.x + width, ha_y, '#3498db', 1, true, `Vzporednica stranici ${nRight} na razdalji v${nRight} = ${fRnd(ha)}.`);
+                    queuePoint(ptA.x, ptA.y, lbl1, '#000', `Presečišče nam sfiksira točko ${lbl1}.`, true);
                     
                     let dx = width*Math.cos(C), dy = -width*Math.sin(C);
-                    queueLine(ptB.x - dx, ptB.y - dy, ptB.x + dx, ptB.y + dy, '#e74c3c', 1, true, `Potegnemo vzporednico stranici b na razdalji hb = ${fRnd(hb)}.`);
-                    queuePoint(ptB.x, ptB.y, 'B', '#000', "Presečišče poltraka in vzporednice nam sfiksira točko B.", true);
+                    queueLine(ptB.x - dx, ptB.y - dy, ptB.x + dx, ptB.y + dy, '#e74c3c', 1, true, `Vzporednica stranici ${nLeft} na razdalji v${nLeft} = ${fRnd(hb)}.`);
+                    queuePoint(ptB.x, ptB.y, lbl2, '#000', `Presečišče nam sfiksira točko ${lbl2}.`, true);
                     
-                    queueLine(ptC.x, ptC.y, ptA.x, ptA.y, '#000', 3, false, "Povežemo točki C in A.", true);
-                    queueLine(ptC.x, ptC.y, ptB.x, ptB.y, '#000', 3, false, "Povežemo točki C in B.", true);
-                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, "Povežemo osnovnico AB.", true);
+                    queueLine(ptC.x, ptC.y, ptA.x, ptA.y, '#000', 3, false, `Povežemo točki ${lbl3} in ${lbl1}.`, true);
+                    queueLine(ptC.x, ptC.y, ptB.x, ptB.y, '#000', 3, false, `Povežemo točki ${lbl3} in ${lbl2}.`, true);
+                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, `Povežemo osnovnico ${nBase}.`, true);
                 } 
                 else if (type === 'A_B_hc') {
-                    queueLine(ptA.x - width/2, ptA.y, ptB.x + width/2, ptA.y, '#aaa', 1, true, "Potegnemo poljubno premico (nosilka osnovnice c).");
-                    queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Udarimo vzporednico na distanci hc = ${fRnd(hc)}.`);
-                    queuePoint(ptC.x, ptC.y, 'C', '#000', "Izberemo random točko C na vzporednici.", true);
-                    queueLine(ptC.x, ptC.y, ptC.x, ptA.y, '#aaa', 1, true, "Z geotrikotnikom spustimo pravokotnico (višino) iz C na osnovnico.");
+                    queueLine(ptA.x - width/2, ptA.y, ptB.x + width/2, ptA.y, '#aaa', 1, true, `Potegnemo poljubno premico (nosilka osnovnice ${nBase}).`);
+                    queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Udarimo vzporednico na distanci v${nBase} = ${fRnd(hc)}.`);
+                    queuePoint(ptC.x, ptC.y, lbl3, '#000', `Izberemo random točko ${lbl3} na vzporednici.`, true);
+                    queueLine(ptC.x, ptC.y, ptC.x, ptA.y, '#aaa', 1, true, `Z geotrikotnikom spustimo višino iz ${lbl3} na osnovnico.`);
                     
-                    queueLine(ptC.x, ptC.y, ptC.x + (ptA.x - ptC.x)*5, ptC.y + (ptA.y - ptC.y)*5, '#e74c3c', 1, true, `Odmerimo in potegnemo levi krak za kot A.`);
-                    queuePoint(ptA.x, ptA.y, 'A', '#000', "Presek s spodnjo premico nam da točko A.", true);
+                    queueLine(ptC.x, ptC.y, ptC.x + (ptA.x - ptC.x)*5, ptC.y + (ptA.y - ptC.y)*5, '#e74c3c', 1, true, `Odmerimo in potegnemo levi krak za kot.`);
+                    queuePoint(ptA.x, ptA.y, lbl1, '#000', `Presek nam da točko ${lbl1}.`, true);
                     
-                    queueLine(ptC.x, ptC.y, ptC.x + (ptB.x - ptC.x)*5, ptC.y + (ptB.y - ptC.y)*5, '#e74c3c', 1, true, `Odmerimo in potegnemo desni krak za kot B.`);
-                    queuePoint(ptB.x, ptB.y, 'B', '#000', "Presek s spodnjo premico nam da točko B.", true);
+                    queueLine(ptC.x, ptC.y, ptC.x + (ptB.x - ptC.x)*5, ptC.y + (ptB.y - ptC.y)*5, '#e74c3c', 1, true, `Odmerimo in potegnemo desni krak za kot.`);
+                    queuePoint(ptB.x, ptB.y, lbl2, '#000', `Presek nam da točko ${lbl2}.`, true);
                     
-                    queueLine(ptA.x, ptA.y, ptC.x, ptC.y, '#000', 3, false, "Zarišemo stranico AC.", true);
-                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, "Zarišemo stranico BC.", true);
-                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, "Zarišemo osnovnico AB.", true);
+                    queueLine(ptA.x, ptA.y, ptC.x, ptC.y, '#000', 3, false, `Zarišemo stranico ${nLeft}.`, true);
+                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, `Zarišemo stranico ${nRight}.`, true);
+                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, `Zarišemo osnovnico ${nBase}.`, true);
                 }
                 else if (type === 'a_ha_hb') {
-                    queuePoint(ptB.x, ptB.y, 'B', '#000', "Startamo s točko B.", true);
-                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, `Iz B potegnemo črto in odmerimo a = ${fRnd(a)}.`, true);
-                    queuePoint(ptC.x, ptC.y, 'C', '#000', "Na koncu daljice označimo točko C.", true);
+                    queuePoint(ptB.x, ptB.y, lbl2, '#000', `Startamo s točko ${lbl2}.`, true);
+                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, `Iz ${lbl2} potegnemo črto in odmerimo ${nRight} = ${fRnd(a)}.`, true);
+                    queuePoint(ptC.x, ptC.y, lbl3, '#000', `Na koncu daljice označimo točko ${lbl3}.`, true);
                     
                     let slope = (ptC.y - ptB.y) / (ptC.x - ptB.x);
                     let bIntercept = ptA.y - slope * ptA.x;
-                    queueLine(ptA.x - width, slope*(ptA.x - width) + bIntercept, ptA.x + width, slope*(ptA.x + width) + bIntercept, '#3498db', 1, true, `Vzporednica na stranico a pri distanci ha = ${fRnd(ha)}.`);
+                    queueLine(ptA.x - width, slope*(ptA.x - width) + bIntercept, ptA.x + width, slope*(ptA.x + width) + bIntercept, '#3498db', 1, true, `Vzporednica na stranico ${nRight} pri distanci v${nRight} = ${fRnd(ha)}.`);
                     
                     let midBC = { x: (ptB.x + ptC.x)/2, y: (ptB.y + ptC.y)/2 };
-                    queueCircle(midBC.x, midBC.y, (a/2)*SCALE, '#3498db', "Talesov krog nad premerom BC.");
+                    queueCircle(midBC.x, midBC.y, (a/2)*SCALE, '#3498db', `Talesov krog nad premerom ${lbl2}${lbl3}.`);
                     
                     let ang_to_Fb = Math.atan2(ptA.y - ptB.y, ptA.x - ptB.x);
-                    
-                    queueCue(ptB.x, ptB.y, `Tukaj zapičiš šestilo (Točka B)...`); 
-                    queueArc(ptB.x, ptB.y, hb * SCALE, ang_to_Fb - 1.0, 2.0, '#aaa', `...in odmeriš lok hb = ${fRnd(hb)}.`);
+                    queueCue(ptB.x, ptB.y, `Zapičiš šestilo v ${lbl2}...`); 
+                    queueArc(ptB.x, ptB.y, hb * SCALE, ang_to_Fb - 1.0, 2.0, '#aaa', `...in odmeriš lok v${nLeft} = ${fRnd(hb)}.`);
                     
                     let slopeAC = (ptC.y - ptA.y) / (ptC.x - ptA.x);
                     let perpSlope = -1 / slopeAC;
@@ -431,131 +432,126 @@
                     let fbX = (bPerp - bAC) / (slopeAC - perpSlope);
                     let fbY = slopeAC * fbX + bAC;
                     
-                    queuePoint(fbX, fbY, 'Fb', '#e74c3c', "Presek krožnice nam določi nožišče višine b (Fb).");
-                    queueLine(ptC.x, ptC.y, ptC.x + (fbX - ptC.x)*5, ptC.y + (fbY - ptC.y)*5, '#aaa', 1, true, "Potegnemo poltrak iz C skozi točko Fb.");
+                    queuePoint(fbX, fbY, 'Nožišče', '#e74c3c', `Presek krožnice nam določi nožišče višine v${nLeft}.`);
+                    queueLine(ptC.x, ptC.y, ptC.x + (fbX - ptC.x)*5, ptC.y + (fbY - ptC.y)*5, '#aaa', 1, true, `Potegnemo poltrak iz ${lbl3} skozi nožišče.`);
                     
-                    queuePoint(ptA.x, ptA.y, 'A', '#000', "Presek poltraka s prejšnjo vzporednico nam lock-ina točko A.", true);
-                    queueLine(ptC.x, ptC.y, ptA.x, ptA.y, '#000', 3, false, "Zarišemo stranico AC.", true);
-                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, "Zarišemo stranico AB.", true);
+                    queuePoint(ptA.x, ptA.y, lbl1, '#000', `Presek s prejšnjo vzporednico nam da točko ${lbl1}.`, true);
+                    queueLine(ptC.x, ptC.y, ptA.x, ptA.y, '#000', 3, false, `Zarišemo stranico ${nLeft}.`, true);
+                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, `Zarišemo stranico ${nBase}.`, true);
                 }
                 else if (type === 'ha_hb_A') {
-                    queuePoint(ptA.x, ptA.y, 'A', '#000', "Startamo pri točki A.", true);
-                    queueLine(ptA.x, ptA.y, ptA.x + width, ptA.y, '#aaa', 1, true, "Zarišemo poljubno premico (nosilko za osnovnico c).");
-                    queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak pod kotom A.`);
+                    queuePoint(ptA.x, ptA.y, lbl1, '#000', `Startamo pri točki ${lbl1}.`, true);
+                    queueLine(ptA.x, ptA.y, ptA.x + width, ptA.y, '#aaa', 1, true, `Zarišemo nosilko za stranico ${nBase}.`);
+                    queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak pod danim kotom.`);
                     
                     let slopeAC = -Math.sin(angA) / Math.cos(angA);
                     let bInterceptAC = ptB.y - slopeAC * ptB.x;
-                    queueLine(ptA.x - width/2, slopeAC*(ptA.x - width/2) + bInterceptAC, ptA.x + width, slopeAC*(ptA.x + width) + bInterceptAC, '#3498db', 1, true, `Vzporednica kraku b na distanci hb = ${fRnd(hb)}.`);
-                    queuePoint(ptB.x, ptB.y, 'B', '#000', "Presek z bazo določi točko B.", true);
+                    queueLine(ptA.x - width/2, slopeAC*(ptA.x - width/2) + bInterceptAC, ptA.x + width, slopeAC*(ptA.x + width) + bInterceptAC, '#3498db', 1, true, `Vzporednica kraku ${nLeft} na distanci v${nLeft} = ${fRnd(hb)}.`);
+                    queuePoint(ptB.x, ptB.y, lbl2, '#000', `Presek z bazo določi točko ${lbl2}.`, true);
                     
                     let ang_to_tangent = Math.atan2(ptC.y - ptA.y, ptC.x - ptA.x) - Math.PI/2;
-                    queueCue(ptA.x, ptA.y, `Zapičiš šestilo (Točka A)...`); 
-                    queueArc(ptA.x, ptA.y, ha * SCALE, ang_to_tangent - 1.0, 2.0, '#aaa', `...in odmeriš lok z radijem ha = ${fRnd(ha)}.`);
-                    queueLine(ptB.x, ptB.y, ptC.x + (ptC.x - ptB.x)*5, ptC.y + (ptC.y - ptB.y)*5, '#3498db', 1, true, "Potegnemo tangento iz B na ta lok.");
-                    queuePoint(ptC.x, ptC.y, 'C', '#000', "Presek tangente s prvim krakom nam da točko C.", true);
+                    queueCue(ptA.x, ptA.y, `Zapičiš šestilo v ${lbl1}...`); 
+                    queueArc(ptA.x, ptA.y, ha * SCALE, ang_to_tangent - 1.0, 2.0, '#aaa', `...in odmeriš lok z radijem v${nRight} = ${fRnd(ha)}.`);
+                    queueLine(ptB.x, ptB.y, ptC.x + (ptC.x - ptB.x)*5, ptC.y + (ptC.y - ptB.y)*5, '#3498db', 1, true, `Potegnemo tangento iz ${lbl2} na ta lok.`);
+                    queuePoint(ptC.x, ptC.y, lbl3, '#000', `Presek tangente s prvim krakom nam da točko ${lbl3}.`, true);
                     
-                    queueLine(ptA.x, ptA.y, ptC.x, ptC.y, '#000', 3, false, "Zarišemo stranico AC.", true);
-                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, "Zarišemo stranico BC.", true);
-                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, "Zarišemo osnovnico AB.", true);
+                    queueLine(ptA.x, ptA.y, ptC.x, ptC.y, '#000', 3, false, `Zarišemo stranico ${nLeft}.`, true);
+                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, `Zarišemo stranico ${nRight}.`, true);
+                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, `Zarišemo osnovnico ${nBase}.`, true);
                 }
                 else {
-                    queuePoint(ptA.x, ptA.y, 'A', '#000', "Zarišemo začetno točko A.", true);
-                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, `Iz A potegnemo črto in odmerimo c = ${fRnd(side_c)}.`, true);
-                    queuePoint(ptB.x, ptB.y, 'B', '#000', "Označimo točko B na koncu daljice.", true);
+                    queuePoint(ptA.x, ptA.y, lbl1, '#000', `Zarišemo začetno točko ${lbl1}.`, true);
+                    queueLine(ptA.x, ptA.y, ptB.x, ptB.y, '#000', 3, false, `Iz ${lbl1} potegnemo črto in odmerimo ${nBase} = ${fRnd(side_c)}.`, true);
+                    queuePoint(ptB.x, ptB.y, lbl2, '#000', `Označimo točko ${lbl2} na koncu daljice.`, true);
 
                     switch(type) {
                         case 'SSS':
                             let ang_C_from_A = Math.atan2(ptC.y - ptA.y, ptC.x - ptA.x);
                             let ang_C_from_B = Math.atan2(ptC.y - ptB.y, ptC.x - ptB.x);
-                            
-                            queueCue(ptA.x, ptA.y, `Zapičiš šestilo tukaj (Točka A)...`); 
-                            queueArc(ptA.x, ptA.y, side_b * SCALE, ang_C_from_A - 0.8, 1.6, '#3498db', `...in odmeriš lok b = ${fRnd(side_b)}.`);
-                            
-                            queueCue(ptB.x, ptB.y, `Sedaj zapičiš šestilo v (Točko B)...`); 
-                            queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_from_B - 0.8, 1.6, '#e74c3c', `...in odmeriš lok a = ${fRnd(calc_a)}.`);
+                            queueCue(ptA.x, ptA.y, `Zapičiš šestilo v točko ${lbl1}...`); 
+                            queueArc(ptA.x, ptA.y, side_b * SCALE, ang_C_from_A - 0.8, 1.6, '#3498db', `...in odmeriš lok ${nLeft} = ${fRnd(side_b)}.`);
+                            queueCue(ptB.x, ptB.y, `Sedaj zapičiš šestilo v ${lbl2}...`); 
+                            queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_from_B - 0.8, 1.6, '#e74c3c', `...in odmeriš lok ${nRight} = ${fRnd(calc_a)}.`);
                             break;
                         case 'SAS':
-                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz A pod danim kotom.`);
+                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz ${lbl1} pod danim kotom.`);
                             let ang_C_SAS = Math.atan2(ptC.y - ptA.y, ptC.x - ptA.x);
-                            queueCue(ptA.x, ptA.y, `Zapičiš šestilo v A...`); 
-                            queueArc(ptA.x, ptA.y, side_b * SCALE, ang_C_SAS - 0.8, 1.6, '#3498db', `...odrežeš krak z radijem b = ${fRnd(side_b)}.`);
+                            queueCue(ptA.x, ptA.y, `Zapičiš šestilo v ${lbl1}...`); 
+                            queueArc(ptA.x, ptA.y, side_b * SCALE, ang_C_SAS - 0.8, 1.6, '#3498db', `...odrežeš krak z radijem ${nLeft} = ${fRnd(side_b)}.`);
                             break;
                         case 'ASA':
-                            queueLine(ptA.x, ptA.y, ptC.x + (ptC.x-ptA.x)*5, ptC.y + (ptC.y-ptA.y)*5, '#aaa', 1, true, `Poltrak iz A pod kotom alfa.`);
-                            queueLine(ptB.x, ptB.y, ptC.x + (ptC.x-ptB.x)*5, ptC.y + (ptC.y-ptB.y)*5, '#aaa', 1, true, `Poltrak iz B pod kotom beta.`);
+                            queueLine(ptA.x, ptA.y, ptC.x + (ptC.x-ptA.x)*5, ptC.y + (ptC.y-ptA.y)*5, '#aaa', 1, true, `Poltrak iz ${lbl1} pod podanim kotom.`);
+                            queueLine(ptB.x, ptB.y, ptC.x + (ptC.x-ptB.x)*5, ptC.y + (ptC.y-ptB.y)*5, '#aaa', 1, true, `Poltrak iz ${lbl2} pod podanim kotom.`);
                             break;
                         case 'SSA':
-                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Poltrak iz A pod kotom alfa.`);
+                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Poltrak iz ${lbl1} pod podanim kotom.`);
                             let ang_C_SSA = Math.atan2(ptC.y - ptB.y, ptC.x - ptB.x);
-                            queueCue(ptB.x, ptB.y, `Zapičiš šestilo v B...`); 
-                            queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_SSA - 0.8, 1.6, '#e74c3c', `...in odmeriš lok a = ${fRnd(calc_a)}.`);
+                            queueCue(ptB.x, ptB.y, `Zapičiš šestilo v ${lbl2}...`); 
+                            queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_SSA - 0.8, 1.6, '#e74c3c', `...in odmeriš lok ${nRight} = ${fRnd(calc_a)}.`);
                             break;
                         case 'c_ha_hb':
                             let midM = { x: (ptA.x + ptB.x)/2, y: ptA.y };
-                            queuePoint(midM.x, midM.y, 'M', '#3498db', "Poiščemo razpolovišče daljice AB.");
-                            
+                            queuePoint(midM.x, midM.y, 'M', '#3498db', `Poiščemo razpolovišče daljice ${lbl1}${lbl2}.`);
                             queueCue(midM.x, midM.y, `Zapičiš šestilo (Središče M)...`); 
-                            queueCircle(midM.x, midM.y, (side_c/2)*SCALE, '#3498db', "...in narišeš Talesov krog nad AB.");
-                            
+                            queueCircle(midM.x, midM.y, (side_c/2)*SCALE, '#3498db', `...in narišeš Talesov krog nad ${nBase}.`);
                             let pFa = { x: ptA.x + (ha*ha/side_c)*SCALE, y: ptA.y - (ha/side_c * Math.sqrt(side_c*side_c - ha*ha))*SCALE };
                             let pFb = { x: ptA.x + (side_c - hb*hb/side_c)*SCALE, y: ptA.y - (hb/side_c * Math.sqrt(side_c*side_c - hb*hb))*SCALE };
                             
-                            queueCue(ptA.x, ptA.y, `Sedaj zapičiš v A...`); 
-                            queueArc(ptA.x, ptA.y, ha * SCALE, Math.atan2(pFa.y - ptA.y, pFa.x - ptA.x) - 0.8, 1.6, '#aaa', `...in odmeriš lok ha = ${fRnd(ha)}.`);
+                            queueCue(ptA.x, ptA.y, `Sedaj zapičiš v ${lbl1}...`); 
+                            queueArc(ptA.x, ptA.y, ha * SCALE, Math.atan2(pFa.y - ptA.y, pFa.x - ptA.x) - 0.8, 1.6, '#aaa', `...in odmeriš lok v${nRight} = ${fRnd(ha)}.`);
+                            queueCue(ptB.x, ptB.y, `Zapičiš še v ${lbl2}...`); 
+                            queueArc(ptB.x, ptB.y, hb * SCALE, Math.atan2(pFb.y - ptB.y, pFb.x - ptB.x) - 0.8, 1.6, '#aaa', `...in odmeriš v${nLeft} = ${fRnd(hb)}.`);
                             
-                            queueCue(ptB.x, ptB.y, `Zapičiš še v B...`); 
-                            queueArc(ptB.x, ptB.y, hb * SCALE, Math.atan2(pFb.y - ptB.y, pFb.x - ptB.x) - 0.8, 1.6, '#aaa', `...in odmeriš hb = ${fRnd(hb)}.`);
-                            
-                            queuePoint(pFa.x, pFa.y, 'Fa', '#e74c3c', "Presečišče določi nožišče višine a.");
-                            queuePoint(pFb.x, pFb.y, 'Fb', '#e74c3c', "Presečišče določi nožišče višine b.");
-                            queueLine(ptB.x, ptB.y, ptB.x + (pFa.x - ptB.x)*5, ptB.y + (pFa.y - ptB.y)*5, '#aaa', 1, true, "Potegnemo tangento iz B skozi Fa.");
-                            queueLine(ptA.x, ptA.y, ptA.x + (pFb.x - ptA.x)*5, ptA.y + (pFb.y - ptA.y)*5, '#aaa', 1, true, "Potegnemo tangento iz A skozi Fb.");
+                            queuePoint(pFa.x, pFa.y, 'Nožišče', '#e74c3c', `Presečišče določi nožišče višine v${nRight}.`);
+                            queuePoint(pFb.x, pFb.y, 'Nožišče', '#e74c3c', `Presečišče določi nožišče višine v${nLeft}.`);
+                            queueLine(ptB.x, ptB.y, ptB.x + (pFa.x - ptB.x)*5, ptB.y + (pFa.y - ptB.y)*5, '#aaa', 1, true, `Potegnemo tangento iz ${lbl2}.`);
+                            queueLine(ptA.x, ptA.y, ptA.x + (pFb.x - ptA.x)*5, ptA.y + (pFb.y - ptA.y)*5, '#aaa', 1, true, `Potegnemo tangento iz ${lbl1}.`);
                             break;
                         case 'c_a_ha':
                             let midM2 = { x: (ptA.x + ptB.x)/2, y: ptA.y };
                             queueCue(midM2.x, midM2.y, `Zapičimo šestilo v središče M...`); 
-                            queueCircle(midM2.x, midM2.y, (side_c/2)*SCALE, '#3498db', "...in narišemo Talesov krog nad AB.");
+                            queueCircle(midM2.x, midM2.y, (side_c/2)*SCALE, '#3498db', `...in narišemo Talesov krog nad ${lbl1}${lbl2}.`);
                             
                             let pFa2 = { x: ptA.x + (ha*ha/side_c)*SCALE, y: ptA.y - (ha/side_c * Math.sqrt(side_c*side_c - ha*ha))*SCALE };
-                            queueCue(ptA.x, ptA.y, `Zapičimo v A...`); 
-                            queueArc(ptA.x, ptA.y, ha * SCALE, Math.atan2(pFa2.y - ptA.y, pFa2.x - ptA.x) - 0.8, 1.6, '#aaa', `...in odmerimo lok ha = ${fRnd(ha)}.`);
+                            queueCue(ptA.x, ptA.y, `Zapičimo v ${lbl1}...`); 
+                            queueArc(ptA.x, ptA.y, ha * SCALE, Math.atan2(pFa2.y - ptA.y, pFa2.x - ptA.x) - 0.8, 1.6, '#aaa', `...in odmerimo lok v${nRight} = ${fRnd(ha)}.`);
                             
-                            queuePoint(pFa2.x, pFa2.y, 'Fa', '#e74c3c', "Presečišče določi nožišče višine a.");
-                            queueLine(ptB.x, ptB.y, ptB.x + (pFa2.x - ptB.x)*5, ptB.y + (pFa2.y - ptB.y)*5, '#aaa', 1, true, "Poltrak iz B skozi Fa.");
+                            queuePoint(pFa2.x, pFa2.y, 'Nožišče', '#e74c3c', `Presečišče določi nožišče višine v${nRight}.`);
+                            queueLine(ptB.x, ptB.y, ptB.x + (pFa2.x - ptB.x)*5, ptB.y + (pFa2.y - ptB.y)*5, '#aaa', 1, true, `Poltrak iz ${lbl2} skozi nožišče.`);
                             
-                            queueCue(ptB.x, ptB.y, `Zapičimo še v B...`); 
-                            queueArc(ptB.x, ptB.y, calc_a * SCALE, Math.atan2(ptC.y - ptB.y, ptC.x - ptB.x) - 0.8, 1.6, '#e74c3c', `...in odmerimo lok a = ${fRnd(calc_a)}.`);
+                            queueCue(ptB.x, ptB.y, `Zapičimo še v ${lbl2}...`); 
+                            queueArc(ptB.x, ptB.y, calc_a * SCALE, Math.atan2(ptC.y - ptB.y, ptC.x - ptB.x) - 0.8, 1.6, '#e74c3c', `...in odmerimo lok ${nRight} = ${fRnd(calc_a)}.`);
                             break;
                         case 'c_a_hc':
-                            queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Z geotrikotnikom potegnemo vzporednico na višini hc = ${fRnd(hc)}.`);
+                            queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Z geotrikotnikom potegnemo vzporednico na višini v${nBase} = ${fRnd(hc)}.`);
                             let ang_C_cahc = Math.atan2(ptC.y - ptB.y, ptC.x - ptB.x);
-                            queueCue(ptB.x, ptB.y, `Tukaj zapičiš šestilo (Točka B)...`); 
-                            queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_cahc - 0.5, 1.0, '#e74c3c', `...in odmeriš lok a = ${fRnd(calc_a)}. Presek nam da C.`);
+                            queueCue(ptB.x, ptB.y, `Tukaj zapičiš šestilo (Točka ${lbl2})...`); 
+                            queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_cahc - 0.5, 1.0, '#e74c3c', `...in odmeriš lok ${nRight} = ${fRnd(calc_a)}. Presek nam da C.`);
                             break;
                         case 'c_hc_A':
-                            queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Vzporednica na višini hc = ${fRnd(hc)}.`);
-                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz A pod kotom alfa.`);
+                            queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Vzporednica na višini v${nBase} = ${fRnd(hc)}.`);
+                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz ${lbl1} pod danim kotom.`);
                             break;
                         case 'c_ha_A':
-                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz A pod kotom alfa.`);
-                            queueCue(ptA.x, ptA.y, `Zapičimo šestilo tukaj (Točka A)...`); 
-                            queueCircle(ptA.x, ptA.y, ha * SCALE, '#3498db', `...in odmerimo krog z radijem ha = ${fRnd(ha)}.`);
-                            queueLine(ptB.x, ptB.y, ptC.x + (ptC.x - ptB.x)*5, ptC.y + (ptC.y - ptB.y)*5, '#aaa', 1, true, "Tangenta iz B na krožnico nam da nosilko stranice a.");
+                            queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz ${lbl1} pod danim kotom.`);
+                            queueCue(ptA.x, ptA.y, `Zapičimo šestilo v ${lbl1}...`); 
+                            queueCircle(ptA.x, ptA.y, ha * SCALE, '#3498db', `...in odmerimo krog z radijem v${nRight} = ${fRnd(ha)}.`);
+                            queueLine(ptB.x, ptB.y, ptC.x + (ptC.x - ptB.x)*5, ptC.y + (ptC.y - ptB.y)*5, '#aaa', 1, true, `Tangenta iz ${lbl2} na krožnico nam da nosilko stranice ${nRight}.`);
                             break;
                         default:
-                            if (hc) queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Vzporednica na višini hc = ${fRnd(hc)}.`);
-                            if (angA > 0) queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz A.`);
+                            if (hc) queueLine(ptA.x - width/2, ptC.y, ptB.x + width/2, ptC.y, '#3498db', 1, true, `Vzporednica na višini v${nBase} = ${fRnd(hc)}.`);
+                            if (angA > 0) queueLine(ptA.x, ptA.y, ptA.x + width*Math.cos(angA), ptA.y - width*Math.sin(angA), '#aaa', 1, true, `Narišemo poltrak iz ${lbl1}.`);
                             if (calc_a > 0 && !hc && !B) {
                                 let ang_C_def = Math.atan2(ptC.y - ptB.y, ptC.x - ptB.x);
-                                queueCue(ptB.x, ptB.y, `Zapičimo šestilo tukaj (Točka B)...`); 
-                                queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_def - 0.8, 1.6, '#e74c3c', `...in odmerimo lok a = ${fRnd(calc_a)}.`);
+                                queueCue(ptB.x, ptB.y, `Zapičimo šestilo tukaj (Točka ${lbl2})...`); 
+                                queueArc(ptB.x, ptB.y, calc_a * SCALE, ang_C_def - 0.8, 1.6, '#e74c3c', `...in odmerimo lok ${nRight} = ${fRnd(calc_a)}.`);
                             }
                             break;
                     }
 
-                    queuePoint(ptC.x, ptC.y, 'C', '#000', "Presečišče nam sfiksira točko C.", true);
-                    queueLine(ptA.x, ptA.y, ptC.x, ptC.y, '#000', 3, false, "Potegnemo stranico AC.", true);
-                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, "Potegnemo stranico BC.", true);
+                    queuePoint(ptC.x, ptC.y, lbl3, '#000', `Presečišče nam sfiksira točko ${lbl3}.`, true);
+                    queueLine(ptA.x, ptA.y, ptC.x, ptC.y, '#000', 3, false, `Potegnemo stranico ${nLeft}.`, true);
+                    queueLine(ptB.x, ptB.y, ptC.x, ptC.y, '#000', 3, false, `Potegnemo stranico ${nRight}.`, true);
                 }
             } catch(e) {
                 alert(e); animQueue = []; return;
@@ -568,7 +564,6 @@
             setInstruction("Klikni '▶ Naslednji korak' da gremo dalje.");
             
             document.querySelectorAll('.btn-center').forEach(btn => btn.disabled = true);
-            
             isPaused = !document.getElementById('autoPlay').checked;
             document.getElementById('btnNextStep').disabled = isPaused ? false : true;
 
@@ -580,63 +575,52 @@
                 let r = dist(ptA.x, ptA.y, ptB.x, ptB.y) * 0.6; 
                 let angAB = Math.atan2(ptB.y - ptA.y, ptB.x - ptA.x);
                 let angBA = Math.atan2(ptA.y - ptB.y, ptA.x - ptB.x);
-                
-                queueCue(ptA.x, ptA.y, `Zapičiš šestilo v A...`); 
+                queueCue(ptA.x, ptA.y, `Zapičiš šestilo v ${lbl1}...`); 
                 queueArc(ptA.x, ptA.y, r, angAB - 1.2, 2.4, '#3498db', "...in potegneš lok čez sredino.");
-                
-                queueCue(ptB.x, ptB.y, `Sedaj zapičiš v B...`); 
+                queueCue(ptB.x, ptB.y, `Sedaj zapičiš v ${lbl2}...`); 
                 queueArc(ptB.x, ptB.y, r, angBA - 1.2, 2.4, '#3498db', "...in sekaš prvi lok.");
                 
                 let dxAB = ptB.x - ptA.x, dyAB = ptB.y - ptA.y;
                 let pAB2 = { x: midAB.x - dyAB, y: midAB.y + dxAB };
-                queueLine(midAB.x - dyAB*2, midAB.y + dxAB*2, midAB.x + dyAB*2, midAB.y - dxAB*2, '#e74c3c', 2, true, "Narišemo simetralo stranice AB.");
+                queueLine(midAB.x - dyAB*2, midAB.y + dxAB*2, midAB.x + dyAB*2, midAB.y - dxAB*2, '#e74c3c', 2, true, `Narišemo simetralo stranice ${nBase}.`);
 
                 let r2 = dist(ptA.x, ptA.y, ptC.x, ptC.y) * 0.6; 
                 let angAC = Math.atan2(ptC.y - ptA.y, ptC.x - ptA.x);
                 let angCA = Math.atan2(ptA.y - ptC.y, ptA.x - ptC.x);
-                
-                queueCue(ptC.x, ptC.y, `Sedaj zapičiš v C...`); 
-                queueArc(ptC.x, ptC.y, r2, angCA - 1.2, 2.4, '#3498db', "Zarišemo lok za stranico AC.");
-                
-                queueCue(ptA.x, ptA.y, `Ponovno zapičiš v A...`); 
+                queueCue(ptC.x, ptC.y, `Sedaj zapičiš v ${lbl3}...`); 
+                queueArc(ptC.x, ptC.y, r2, angCA - 1.2, 2.4, '#3498db', `Zarišemo lok za stranico ${nLeft}.`);
+                queueCue(ptA.x, ptA.y, `Ponovno zapičiš v ${lbl1}...`); 
                 queueArc(ptA.x, ptA.y, r2, angAC - 1.2, 2.4, '#3498db', "da seka prejšnji lok."); 
                 
                 let dxAC = ptC.x - ptA.x, dyAC = ptC.y - ptA.y;
                 let pAC2 = { x: midAC.x - dyAC, y: midAC.y + dxAC };
-                queueLine(midAC.x - dyAC*2, midAC.y + dxAC*2, midAC.x + dyAC*2, midAC.y - dxAC*2, '#e74c3c', 2, true, "Narišemo simetralo stranice AC.");
+                queueLine(midAC.x - dyAC*2, midAC.y + dxAC*2, midAC.x + dyAC*2, midAC.y - dxAC*2, '#e74c3c', 2, true, `Narišemo simetralo stranice ${nLeft}.`);
 
                 let O = getIntersect(midAB, pAB2, midAC, pAC2);
-                queuePoint(O.x, O.y, 'O', '#e74c3c', "Presečišče simetral = Središče očrtane krožnice.");
-                
-                queueCue(O.x, O.y, `Zapičiš šestilo v središče O...`); 
+                queuePoint(O.x, O.y, 'So', '#e74c3c', "Presečišče simetral = Središče očrtane krožnice (So).");
+                queueCue(O.x, O.y, `Zapičiš šestilo v središče So...`); 
                 queueCircle(O.x, O.y, dist(ptA.x, ptA.y, O.x, O.y), '#198754', "...in narišeš očrtano krožnico skozi oglišča.");
             }
             else if (type === 'centroid') {
                 let rAB = dist(ptA.x, ptA.y, ptB.x, ptB.y)*0.6;
                 let angAB = Math.atan2(ptB.y - ptA.y, ptB.x - ptA.x);
                 let angBA = Math.atan2(ptA.y - ptB.y, ptA.x - ptB.x);
-                
-                queueCue(ptA.x, ptA.y, `Zapičimo šestilo v oglišče A...`); 
-                queueArc(ptA.x, ptA.y, rAB, angAB - 1.2, 2.4, '#aaa', "Zarišemo kratek lok za razpolovitev AB.");
-                
-                queueCue(ptB.x, ptB.y, `Zapičimo šestilo v oglišče B...`); 
+                queueCue(ptA.x, ptA.y, `Zapičimo šestilo v oglišče ${lbl1}...`); 
+                queueArc(ptA.x, ptA.y, rAB, angAB - 1.2, 2.4, '#aaa', `Zarišemo kratek lok za razpolovitev ${nBase}.`);
+                queueCue(ptB.x, ptB.y, `Zapičimo šestilo v oglišče ${lbl2}...`); 
                 queueArc(ptB.x, ptB.y, rAB, angBA - 1.2, 2.4, '#aaa', "Sekamo prejšnji lok.");
-                
-                queuePoint(midAB.x, midAB.y, '', '#3498db', "Označimo razpolovišče AB.");
-                queueLine(ptC.x, ptC.y, midAB.x, midAB.y, '#3498db', 2, true, "Potegnemo težiščnico iz C.");
+                queuePoint(midAB.x, midAB.y, '', '#3498db', `Označimo razpolovišče ${nBase}.`);
+                queueLine(ptC.x, ptC.y, midAB.x, midAB.y, '#3498db', 2, true, `Potegnemo težiščnico iz ${lbl3}.`);
 
                 let rBC = dist(ptB.x, ptB.y, ptC.x, ptC.y)*0.6;
                 let angBC = Math.atan2(ptC.y - ptB.y, ptC.x - ptB.x);
                 let angCB = Math.atan2(ptB.y - ptC.y, ptB.x - ptC.x);
-                
-                queueCue(ptB.x, ptB.y, `Zapičimo v oglišče B...`); 
-                queueArc(ptB.x, ptB.y, rBC, angBC - 1.2, 2.4, '#aaa', "Lok za razpolovitev stranice BC.");
-                
-                queueCue(ptC.x, ptC.y, `Zapičimo v oglišče C...`); 
+                queueCue(ptB.x, ptB.y, `Zapičimo v oglišče ${lbl2}...`); 
+                queueArc(ptB.x, ptB.y, rBC, angBC - 1.2, 2.4, '#aaa', `Lok za razpolovitev stranice ${nRight}.`);
+                queueCue(ptC.x, ptC.y, `Zapičimo v oglišče ${lbl3}...`); 
                 queueArc(ptC.x, ptC.y, rBC, angCB - 1.2, 2.4, '#aaa', "Sekamo lok.");
-                
-                queuePoint(midBC.x, midBC.y, '', '#3498db', "Razpolovišče BC.");
-                queueLine(ptA.x, ptA.y, midBC.x, midBC.y, '#3498db', 2, true, "Potegnemo težiščnico iz A.");
+                queuePoint(midBC.x, midBC.y, '', '#3498db', `Razpolovišče ${nRight}.`);
+                queueLine(ptA.x, ptA.y, midBC.x, midBC.y, '#3498db', 2, true, `Potegnemo težiščnico iz ${lbl1}.`);
 
                 let gx = (ptA.x + ptB.x + ptC.x) / 3, gy = (ptA.y + ptB.y + ptC.y) / 3;
                 queuePoint(gx, gy, 'T', '#e74c3c', "Presečišče težiščnic = Težišče (T).");
@@ -653,19 +637,15 @@
                 let pA2 = { x: ptA.x + rA * Math.cos(angAC), y: ptA.y + rA * Math.sin(angAC) };
                 let angI_A = Math.atan2(I_y - ptA.y, I_x - ptA.x);
 
-                queueCue(ptA.x, ptA.y, `Zapičiš šestilo v oglišče A...`); 
+                queueCue(ptA.x, ptA.y, `Zapičiš šestilo v oglišče ${lbl1}...`); 
                 queueArc(ptA.x, ptA.y, rA, angI_A - 0.8, 1.6, '#aaa', "Lok, ki seka sosednji stranici.");
-                
                 let angI_pA1 = Math.atan2(I_y - pA1.y, I_x - pA1.x);
                 let angI_pA2 = Math.atan2(I_y - pA2.y, I_x - pA2.x);
-                
-                queueCue(pA1.x, pA1.y, `Zapičiš šestilo v prvo nožišče (na krak AB)...`); 
+                queueCue(pA1.x, pA1.y, `Zapičiš šestilo v prvo nožišče...`); 
                 queueArc(pA1.x, pA1.y, rA, angI_pA1 - 0.5, 1.0, '#3498db', "Zarišemo lok.");
-                
-                queueCue(pA2.x, pA2.y, `Zapičiš šestilo v drugo nožišče (na krak AC)...`); 
+                queueCue(pA2.x, pA2.y, `Zapičiš šestilo v drugo nožišče...`); 
                 queueArc(pA2.x, pA2.y, rA, angI_pA2 - 0.5, 1.0, '#3498db', "Sekamo prejšnji lok.");
-                
-                queueLine(ptA.x, ptA.y, ptA.x + (I_x - ptA.x)*2.5, ptA.y + (I_y - ptA.y)*2.5, '#e74c3c', 2, true, "Simetrala kota A.");
+                queueLine(ptA.x, ptA.y, ptA.x + (I_x - ptA.x)*2.5, ptA.y + (I_y - ptA.y)*2.5, '#e74c3c', 2, true, `Simetrala kota ${lbl1}.`);
 
                 let rB = Math.min(a_len, c_len) * 0.4;
                 let angBA = Math.atan2(ptA.y - ptB.y, ptA.x - ptB.x);
@@ -674,26 +654,20 @@
                 let pB2 = { x: ptB.x + rB * Math.cos(angBC), y: ptB.y + rB * Math.sin(angBC) };
                 let angI_B = Math.atan2(I_y - ptB.y, I_x - ptB.x);
 
-                queueCue(ptB.x, ptB.y, `Sedaj zapičimo šestilo v oglišče B...`); 
-                queueArc(ptB.x, ptB.y, rB, angI_B - 0.8, 1.6, '#aaa', "Lok čez krake kota B.");
-                
+                queueCue(ptB.x, ptB.y, `Sedaj zapičimo šestilo v oglišče ${lbl2}...`); 
+                queueArc(ptB.x, ptB.y, rB, angI_B - 0.8, 1.6, '#aaa', `Lok čez krake kota ${lbl2}.`);
                 let angI_pB1 = Math.atan2(I_y - pB1.y, I_x - pB1.x);
                 let angI_pB2 = Math.atan2(I_y - pB2.y, I_x - pB2.x);
-                
-                queueCue(pB1.x, pB1.y, `Zapičiš v prvo nožišče (krak AB)...`); 
+                queueCue(pB1.x, pB1.y, `Zapičiš v prvo nožišče...`); 
                 queueArc(pB1.x, pB1.y, rB, angI_pB1 - 0.5, 1.0, '#3498db', "Zarišemo lok.");
-                
-                queueCue(pB2.x, pB2.y, `Zapičiš v drugo nožišče (krak BC)...`); 
+                queueCue(pB2.x, pB2.y, `Zapičiš v drugo nožišče...`); 
                 queueArc(pB2.x, pB2.y, rB, angI_pB2 - 0.5, 1.0, '#3498db', "Sekamo lok.");
-                
-                queueLine(ptB.x, ptB.y, ptB.x + (I_x - ptB.x)*2.5, ptB.y + (I_y - ptB.y)*2.5, '#e74c3c', 2, true, "Simetrala kota B.");
+                queueLine(ptB.x, ptB.y, ptB.x + (I_x - ptB.x)*2.5, ptB.y + (I_y - ptB.y)*2.5, '#e74c3c', 2, true, `Simetrala kota ${lbl2}.`);
 
-                queuePoint(I_x, I_y, 'S', '#e74c3c', "Presečišče simetral = Središče včrtane krožnice.");
-                
+                queuePoint(I_x, I_y, 'Sv', '#e74c3c', "Presečišče = Središče včrtane krožnice (Sv).");
                 let s = (a_len+b_len+c_len)/2;
                 let inR = Math.sqrt(s*(s-a_len)*(s-b_len)*(s-c_len)) / s;
-                
-                queueCue(I_x, I_y, `Zapičiš šestilo v središče S...`); 
+                queueCue(I_x, I_y, `Zapičiš šestilo v središče Sv...`); 
                 queueCircle(I_x, I_y, inR, '#198754', "...in narišeš včrtano krožnico.");
             }
             else if (type === 'orthocenter') {
@@ -701,8 +675,7 @@
                 let lenAB2 = dxAB*dxAB + dyAB*dyAB;
                 let dotC = (ptC.x - ptA.x)*dxAB + (ptC.y - ptA.y)*dyAB;
                 let footC = { x: ptA.x + (dotC/lenAB2)*dxAB, y: ptA.y + (dotC/lenAB2)*dyAB };
-                
-                queueLine(ptA.x - dxAB, ptA.y - dyAB, ptB.x + dxAB, ptB.y + dyAB, '#aaa', 1, true, "Podaljšamo nosilko stranice AB, da imamo kam prislonit geotrikotnik.");
+                queueLine(ptA.x - dxAB*0.6, ptA.y - dyAB*0.6, ptB.x + dxAB*0.6, ptB.y + dyAB*0.6, '#aaa', 1, true, `Podaljšamo nosilko stranice ${nBase} za geotrikotnik.`);
                 
                 let dxAC = ptC.x - ptA.x, dyAC = ptC.y - ptA.y;
                 let lenAC2 = dxAC*dxAC + dyAC*dyAC;
@@ -717,19 +690,17 @@
                 let t_H_C = ((H.x - ptC.x)*vecF_C.x + (H.y - ptC.y)*vecF_C.y) / (vecF_C.x**2 + vecF_C.y**2);
                 let start_C = { x: ptC.x + Math.min(0, t_H_C - 0.1)*vecF_C.x, y: ptC.y + Math.min(0, t_H_C - 0.1)*vecF_C.y };
                 let end_C = { x: ptC.x + Math.max(1.1, t_H_C + 0.1)*vecF_C.x, y: ptC.y + Math.max(1.1, t_H_C + 0.1)*vecF_C.y };
-                
-                queueLine(start_C.x, start_C.y, end_C.x, end_C.y, '#e74c3c', 2, true, "Z geotrikotnikom spustimo pravokotnico (višino) iz C na AB.");
+                queueLine(start_C.x, start_C.y, end_C.x, end_C.y, '#e74c3c', 2, true, `Spustimo višino iz ${lbl3} na ${nBase}.`);
 
-                queueLine(ptA.x - dxAC, ptA.y - dyAC, ptC.x + dxAC, ptC.y + dyAC, '#aaa', 1, true, "Podaljšamo nosilko stranice AC za geotrikotnik.");
+                queueLine(ptA.x - dxAC*0.6, ptA.y - dyAC*0.6, ptC.x + dxAC*0.6, ptC.y + dyAC*0.6, '#aaa', 1, true, `Podaljšamo nosilko stranice ${nLeft} za geotrikotnik.`);
                 
                 let vecF_B = { x: footB.x - ptB.x, y: footB.y - ptB.y };
                 let t_H_B = ((H.x - ptB.x)*vecF_B.x + (H.y - ptB.y)*vecF_B.y) / (vecF_B.x**2 + vecF_B.y**2);
                 let start_B = { x: ptB.x + Math.min(0, t_H_B - 0.1)*vecF_B.x, y: ptB.y + Math.min(0, t_H_B - 0.1)*vecF_B.y };
                 let end_B = { x: ptB.x + Math.max(1.1, t_H_B + 0.1)*vecF_B.x, y: ptB.y + Math.max(1.1, t_H_B + 0.1)*vecF_B.y };
+                queueLine(start_B.x, start_B.y, end_B.x, end_B.y, '#e74c3c', 2, true, `Spustimo višino iz ${lbl2} na ${nLeft}.`);
 
-                queueLine(start_B.x, start_B.y, end_B.x, end_B.y, '#e74c3c', 2, true, "Z geotrikotnikom spustimo pravokotnico (višino) iz B na AC.");
-
-                queuePoint(H.x, H.y, 'H', '#e74c3c', "Presečišče višin nam da Višinsko točko (H).");
+                queuePoint(H.x, H.y, 'V', '#e74c3c', "Presečišče višin nam da Višinsko točko (V).");
             }
         }
 
@@ -737,15 +708,11 @@
             animQueue = []; currentAnim = null;
             completedShapes = baseTriangleShapes.filter(s => s.essential).map(s => ({...s}));
             setInstruction("Zresetirano na čist trikotnik. Izberi center.");
-            
             document.querySelectorAll('.btn-center').forEach(btn => btn.disabled = false);
             document.getElementById('btnPrevStep').disabled = true;
         }
 
-        function queueCue(x, y, desc) {
-            animQueue.push({ type: 'cue', x, y, r: 60, progress: 0, speed: 0.02, desc });
-        }
-
+        function queueCue(x, y, desc) { animQueue.push({ type: 'cue', x, y, r: 60, progress: 0, speed: 0.02, desc }); }
         function queueLine(x1, y1, x2, y2, color, weight, dashed, desc, essential=false) { animQueue.push({ type: 'line', x1, y1, x2, y2, color, weight, dashed, progress: 0, speed: 0.02, desc, essential }); }
         function queueCircle(x, y, r, color, desc, essential=false) { animQueue.push({ type: 'circle', x, y, r, color, progress: 0, speed: 0.02, desc, essential }); }
         function queueArc(x, y, r, startAng, sweep, color, desc, essential=false) { animQueue.push({ type: 'arc', x, y, r, startAng, sweep, color, progress: 0, speed: 0.02, desc, essential }); }
