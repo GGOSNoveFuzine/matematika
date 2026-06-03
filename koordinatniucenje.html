@@ -1,299 +1,757 @@
 <!DOCTYPE html>
 <html lang="sl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koordinatni Sistem - 1. Kvadrant</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f0f4f8;
-            color: #333;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Koordinatni sistem - 1. kvadrant ali vsi 4 kvadranti</title>
+  <style>
+    :root {
+      --bg: #eef4fb;
+      --panel: #ffffff;
+      --ink: #1f2937;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --green: #16a34a;
+      --green-soft: #dcfce7;
+      --red: #dc2626;
+      --red-soft: #fee2e2;
+      --orange: #ea580c;
+      --grid: #d8e2ee;
+      --axis: #111827;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+      --radius: 18px;
+    }
 
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        #controls {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #dbeafe 0, transparent 35%),
+        radial-gradient(circle at bottom right, #dcfce7 0, transparent 30%),
+        var(--bg);
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 22px;
+    }
 
-        .mode-switch {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.1rem;
-        }
+    .app {
+      width: min(980px, 100%);
+    }
 
-        button.clear-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        button.clear-btn:hover { background-color: #c0392b; }
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
 
-        #game-container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            position: relative;
-        }
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.75rem, 4vw, 2.6rem);
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
 
-        canvas {
-            border: 1px solid #ccc;
-            cursor: crosshair;
-            background-color: #fff;
-        }
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
 
-        #status-bar {
-            min-height: 40px;
-            margin-bottom: 10px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            padding: 10px;
-            background-color: #e8f0fe;
-            border-radius: 5px;
-            border: 1px solid #d2e3fc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      backdrop-filter: blur(8px);
+    }
 
-        .highlight {
-            color: #d32f2f;
-            font-size: 1.5rem;
-            margin-left: 10px;
-        }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
 
-        #feedback {
-            margin-top: 10px;
-            font-weight: bold;
-            height: 24px;
-            color: #555;
-        }
+    label {
+      display: block;
+      color: #334155;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
 
-        .correct { color: green !important; }
-        .wrong { color: red !important; }
-    </style>
+    select,
+    button {
+      width: 100%;
+      min-height: 42px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      padding: 8px 12px;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    button:hover {
+      filter: brightness(0.97);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-blue {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .btn-red {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .status {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      background: var(--blue-soft);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    #taskText {
+      font-size: clamp(1rem, 2.3vw, 1.35rem);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .score {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: #fff;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      font-size: 0.9rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .board-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    canvas {
+      width: min(100%, 720px);
+      aspect-ratio: 1 / 1;
+      display: block;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      background: #fff;
+      cursor: crosshair;
+      touch-action: none;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.02);
+    }
+
+    #feedback {
+      min-height: 46px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    #feedback.good {
+      color: #14532d;
+      background: var(--green-soft);
+      border-color: #bbf7d0;
+    }
+
+    #feedback.bad {
+      color: #7f1d1d;
+      background: var(--red-soft);
+      border-color: #fecaca;
+    }
+
+    #feedback.info {
+      color: #1e3a8a;
+      background: var(--blue-soft);
+      border-color: #bfdbfe;
+    }
+
+    .helper {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    kbd {
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-family: inherit;
+      font-size: 0.85em;
+      font-weight: 800;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 12px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .status {
+        grid-template-columns: 1fr;
+      }
+
+      .score {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 460px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        padding: 12px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <main class="app">
+    <header>
+      <h1>Koordinatni sistem</h1>
+      <p class="subtitle">Klikni točko. Najprej greš po osi x, potem po osi y. Easy mode → physics graphs later.</p>
+    </header>
 
-    <h1>Koordinatni Sistem (1. Kvadrant)</h1>
-
-    <div id="controls">
-        <div class="mode-switch">
-            <label>
-                <input type="radio" name="mode" value="learning" checked onchange="setMode('learning')"> 
-                Učenje (Prosto)
-            </label>
-            <label>
-                <input type="radio" name="mode" value="game" onchange="setMode('game')"> 
-                Igra (Naloge)
-            </label>
+    <section class="panel" aria-label="Interaktivna vaja koordinat">
+      <div class="controls">
+        <div>
+          <label for="modeSelect">Način</label>
+          <select id="modeSelect">
+            <option value="learning">Učenje</option>
+            <option value="game">Igra</option>
+          </select>
         </div>
-        <button class="clear-btn" onclick="resetBoard()">Počisti tablo</button>
-    </div>
 
-    <div id="game-container">
-        <div id="status-bar">
-            <span id="instruction-text">Klikni kjerkoli na mrežo.</span>
-            <span id="target-coords" class="highlight" style="display:none"></span>
+        <div>
+          <label for="rangeSelect">Območje</label>
+          <select id="rangeSelect">
+            <option value="first">1. kvadrant (0 do 10)</option>
+            <option value="four">Vsi 4 kvadranti (-10 do 10)</option>
+          </select>
         </div>
-        
-        <canvas id="gridCanvas" width="500" height="500"></canvas>
-        
-        <div id="feedback"></div>
-    </div>
 
-    <script>
-        const canvas = document.getElementById('gridCanvas');
-        const ctx = canvas.getContext('2d');
-        const instructionText = document.getElementById('instruction-text');
-        const targetDisplay = document.getElementById('target-coords');
-        const feedbackDisplay = document.getElementById('feedback');
+        <div>
+          <label>&nbsp;</label>
+          <button id="newTaskBtn" class="btn-blue" type="button">Nova naloga</button>
+        </div>
 
-        // Settings
-        const gridSize = 10;
-        const padding = 40;
-        const width = canvas.width - (padding * 2);
-        const height = canvas.height - (padding * 2);
-        const step = width / gridSize;
+        <div>
+          <label>&nbsp;</label>
+          <button id="clearBtn" class="btn-red" type="button">Počisti tablo</button>
+        </div>
+      </div>
 
-        // State
-        let currentMode = 'learning'; // 'learning' or 'game'
-        let targetX = 0;
-        let targetY = 0;
-        let isGamePaused = false;
+      <div class="status">
+        <div id="taskText">Izberi način in klikni na mrežo.</div>
+        <div class="score" aria-label="Točke">
+          <span class="pill">✅ <span id="rightCount">0</span></span>
+          <span class="pill">❌ <span id="wrongCount">0</span></span>
+          <span class="pill">🔥 niz <span id="streakCount">0</span></span>
+        </div>
+      </div>
 
-        // --- DRAWING FUNCTIONS ---
+      <div class="board-wrap">
+        <canvas id="gridCanvas" aria-label="Koordinatna mreža"></canvas>
+      </div>
 
-        function drawGrid() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.beginPath();
-            ctx.strokeStyle = '#ddd';
-            ctx.lineWidth = 1;
-            ctx.font = "14px Arial";
-            ctx.fillStyle = "#333";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+      <div id="feedback" class="info">V načinu učenja klikni kamorkoli na mrežo. V igri poišči zahtevano točko.</div>
 
-            for (let i = 0; i <= gridSize; i++) {
-                const xPos = padding + (i * step);
-                const yPos = (canvas.height - padding) - (i * step);
+      <p class="helper">
+        Namig: koordinata je zapisana kot <strong>(x, y)</strong>. Najprej levo/desno po osi <kbd>x</kbd>, potem gor/dol po osi <kbd>y</kbd>.
+      </p>
+    </section>
+  </main>
 
-                // Vertical lines
-                ctx.moveTo(xPos, padding);
-                ctx.lineTo(xPos, canvas.height - padding);
-                ctx.fillText(i, xPos, canvas.height - padding + 20);
+  <script>
+    // DOM stuff, čist basic, no fancy framework drama.
+    const canvas = document.getElementById("gridCanvas");
+    const ctx = canvas.getContext("2d");
 
-                // Horizontal lines
-                ctx.moveTo(padding, yPos);
-                ctx.lineTo(canvas.width - padding, yPos);
-                ctx.fillText(i, padding - 20, yPos);
-            }
-            ctx.stroke();
+    const modeSelect = document.getElementById("modeSelect");
+    const rangeSelect = document.getElementById("rangeSelect");
+    const newTaskBtn = document.getElementById("newTaskBtn");
+    const clearBtn = document.getElementById("clearBtn");
 
-            // Bold Axes
-            ctx.beginPath();
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            
-            // Y Axis
-            ctx.moveTo(padding, padding);
-            ctx.lineTo(padding, canvas.height - padding);
-            
-            // X Axis
-            ctx.moveTo(padding, canvas.height - padding);
-            ctx.lineTo(canvas.width - padding, canvas.height - padding);
-            
-            ctx.stroke();
+    const taskText = document.getElementById("taskText");
+    const feedback = document.getElementById("feedback");
+    const rightCount = document.getElementById("rightCount");
+    const wrongCount = document.getElementById("wrongCount");
+    const streakCount = document.getElementById("streakCount");
 
-            // Origin Label
-            ctx.fillText("(0,0)", padding - 25, canvas.height - padding + 20);
-            
-            // Axis Labels
-            ctx.font = "bold 16px Arial";
-            ctx.fillText("x", canvas.width - 10, canvas.height - padding + 5);
-            ctx.fillText("y", padding, 10);
+    // State: tu držimo mini spomin aplikacije, nič rocket science.
+    let mode = "learning";
+    let rangeMode = "first";
+    let bounds = { min: 0, max: 10 };
+    let target = null;
+    let points = [];
+    let score = { right: 0, wrong: 0, streak: 0 };
+    let gameLocked = false;
+
+    // Board settings se računajo sproti, ker telefon ≠ projektor.
+    let dpr = window.devicePixelRatio || 1;
+    let size = 720;
+    let pad = 54;
+    let step = 1;
+
+    function setFeedback(text, kind = "info") {
+      feedback.textContent = text;
+      feedback.className = kind;
+    }
+
+    function updateScore() {
+      rightCount.textContent = score.right;
+      wrongCount.textContent = score.wrong;
+      streakCount.textContent = score.streak;
+    }
+
+    function getBounds() {
+      // 1. kvadrant je warm-up, four quadrants je real deal.
+      if (rangeMode === "four") {
+        return { min: -10, max: 10 };
+      }
+
+      return { min: 0, max: 10 };
+    }
+
+    function valueCount() {
+      return bounds.max - bounds.min;
+    }
+
+    function resizeCanvas() {
+      const cssSize = Math.min(720, canvas.parentElement.clientWidth);
+      dpr = window.devicePixelRatio || 1;
+      size = Math.max(320, Math.round(cssSize));
+
+      canvas.width = Math.round(size * dpr);
+      canvas.height = Math.round(size * dpr);
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Manjši ekran, malo manj paddinga, da mreža ne zgleda tiny.
+      pad = size < 420 ? 38 : 54;
+      step = (size - 2 * pad) / valueCount();
+
+      draw();
+    }
+
+    function xToPixel(x) {
+      return pad + (x - bounds.min) * step;
+    }
+
+    function yToPixel(y) {
+      // Canvas y gre dol, matematika y gre gor. Classic.
+      return size - pad - (y - bounds.min) * step;
+    }
+
+    function pixelToCoord(px, py) {
+      const minPixel = pad;
+      const maxPixel = size - pad;
+
+      // Klik izven grafa? Nope, ne bomo fejkali koordinat.
+      if (px < minPixel || px > maxPixel || py < minPixel || py > maxPixel) {
+        return null;
+      }
+
+      const x = Math.round(bounds.min + (px - pad) / step);
+      const y = Math.round(bounds.min + (size - pad - py) / step);
+
+      if (x < bounds.min || x > bounds.max || y < bounds.min || y > bounds.max) {
+        return null;
+      }
+
+      return { x, y };
+    }
+
+    function drawArrow(fromX, fromY, toX, toY) {
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      const head = 10;
+
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - head * Math.cos(angle - Math.PI / 6), toY - head * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - head * Math.cos(angle + Math.PI / 6), toY - head * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, size, size);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+
+      const min = bounds.min;
+      const max = bounds.max;
+      const zeroInside = min <= 0 && max >= 0;
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--grid").trim();
+      ctx.font = `${size < 420 ? 11 : 13}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let v = min; v <= max; v++) {
+        const x = xToPixel(v);
+        const y = yToPixel(v);
+
+        // Vertikalne črte.
+        ctx.beginPath();
+        ctx.moveTo(x, pad);
+        ctx.lineTo(x, size - pad);
+        ctx.stroke();
+
+        // Horizontalne črte.
+        ctx.beginPath();
+        ctx.moveTo(pad, y);
+        ctx.lineTo(size - pad, y);
+        ctx.stroke();
+      }
+
+      // Kje sta osi? V 1. kvadrantu sta na robu, pri 4 kvadrantih gresta čez sredino.
+      const axisX = zeroInside ? xToPixel(0) : pad;
+      const axisY = zeroInside ? yToPixel(0) : size - pad;
+
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--axis").trim();
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--axis").trim();
+      ctx.lineWidth = 2.5;
+
+      drawArrow(pad, axisY, size - pad + 18, axisY);
+      drawArrow(axisX, size - pad, axisX, pad - 18);
+
+      ctx.font = `bold ${size < 420 ? 14 : 17}px system-ui, sans-serif`;
+      ctx.fillText("x", size - pad + 28, axisY + 2);
+      ctx.fillText("y", axisX, pad - 30);
+
+      drawLabels(axisX, axisY);
+    }
+
+    function drawLabels(axisX, axisY) {
+      const min = bounds.min;
+      const max = bounds.max;
+      const labelEvery = size < 420 && rangeMode === "four" ? 2 : 1;
+
+      ctx.font = `${size < 420 ? 10 : 12}px system-ui, sans-serif`;
+      ctx.fillStyle = "#475569";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+
+      for (let v = min; v <= max; v++) {
+        if (v % labelEvery !== 0) continue;
+
+        const x = xToPixel(v);
+        const y = yToPixel(v);
+
+        // x številke damo ob x-os, ampak malo premaknjeno, da ni gužve.
+        if (v !== 0 || rangeMode === "first") {
+          const labelY = Math.min(size - pad + 8, Math.max(pad + 6, axisY + 8));
+          ctx.fillText(String(v), x, labelY);
         }
 
-        function drawPoint(x, y, color, labelText) {
-            const pixelX = padding + (x * step);
-            const pixelY = (canvas.height - padding) - (y * step);
-
-            ctx.beginPath();
-            ctx.arc(pixelX, pixelY, 6, 0, 2 * Math.PI);
-            ctx.fillStyle = color;
-            ctx.fill();
-            
-            ctx.fillStyle = "black";
-            ctx.font = "bold 14px Arial";
-            // Ensure text doesn't go off screen
-            let textX = pixelX + 15;
-            let textY = pixelY - 10;
-            if(x > 8) textX = pixelX - 45; 
-
-            ctx.fillText(labelText || `(${x},${y})`, textX, textY);
+        // y številke ob y-os.
+        if (v !== 0 || rangeMode === "first") {
+          const labelX = Math.max(12, Math.min(size - 18, axisX - 18));
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(v), labelX, y);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
         }
+      }
 
-        // --- LOGIC FUNCTIONS ---
+      // Nula naj bo samo enkrat, ker double zero zgleda messy.
+      if (rangeMode === "four") {
+        ctx.textAlign = "right";
+        ctx.textBaseline = "top";
+        ctx.fillText("0", axisX - 8, axisY + 8);
+      }
+    }
 
-        function setMode(mode) {
-            currentMode = mode;
-            resetBoard();
-            
-            if (currentMode === 'game') {
-                instructionText.innerText = "Naloga: Poišči točko";
-                targetDisplay.style.display = "inline";
-                newTarget();
-            } else {
-                instructionText.innerText = "Prosto učenje: Klikni na mrežo za prikaz točk.";
-                targetDisplay.style.display = "none";
-                feedbackDisplay.innerText = "";
-            }
-        }
+    function drawPoint(point, color = "#2563eb", label = "") {
+      const px = xToPixel(point.x);
+      const py = yToPixel(point.y);
 
-        function resetBoard() {
-            drawGrid();
-            feedbackDisplay.innerText = "";
-            feedbackDisplay.className = "";
-        }
+      ctx.save();
 
-        function newTarget() {
-            targetX = Math.floor(Math.random() * (gridSize + 1));
-            targetY = Math.floor(Math.random() * (gridSize + 1));
-            targetDisplay.innerText = `(${targetX}, ${targetY})`;
-            feedbackDisplay.innerText = "";
-            feedbackDisplay.className = "";
-            drawGrid(); // Clear old dots
-            isGamePaused = false;
-        }
+      // Mali glow, da učenec vidi point, tudi na projektorju.
+      ctx.beginPath();
+      ctx.arc(px, py, 10, 0, Math.PI * 2);
+      ctx.fillStyle = `${color}24`;
+      ctx.fill();
 
-        // --- INTERACTION ---
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
 
-        canvas.addEventListener('mousedown', function(event) {
-            if (currentMode === 'game' && isGamePaused) return;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
 
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
+      if (label) {
+        const text = label;
+        ctx.font = `bold ${size < 420 ? 12 : 14}px system-ui, sans-serif`;
+        const metrics = ctx.measureText(text);
+        const boxW = metrics.width + 14;
+        const boxH = 24;
 
-            // Coordinate Math
-            let clickedX = Math.round((mouseX - padding) / step);
-            let clickedY = Math.round(((canvas.height - padding) - mouseY) / step);
+        let tx = px + 12;
+        let ty = py - 34;
 
-            // Boundaries
-            if (clickedX < 0) clickedX = 0;
-            if (clickedX > gridSize) clickedX = gridSize;
-            if (clickedY < 0) clickedY = 0;
-            if (clickedY > gridSize) clickedY = gridSize;
+        if (tx + boxW > size - 8) tx = px - boxW - 12;
+        if (ty < 8) ty = py + 14;
 
-            if (currentMode === 'learning') {
-                // Learning Mode: Just draw, don't clear previous
-                // We redraw grid? No, allow multiple points. 
-                // But text might overlap. That's okay for teacher demo.
-                drawPoint(clickedX, clickedY, '#3498db');
-                feedbackDisplay.innerText = `Zadnja točka: (${clickedX}, ${clickedY})`;
-            } 
-            else if (currentMode === 'game') {
-                // Game Mode logic
-                drawGrid(); // Clear previous attempts
+        ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+        roundRect(tx, ty, boxW, boxH, 8);
+        ctx.fill();
 
-                if (clickedX === targetX && clickedY === targetY) {
-                    drawPoint(clickedX, clickedY, '#2ecc71'); // Green
-                    feedbackDisplay.innerText = `Pravilno! To je točka (${clickedX}, ${clickedY}).`;
-                    feedbackDisplay.className = "correct";
-                    isGamePaused = true;
-                    setTimeout(newTarget, 1500);
-                } else {
-                    drawPoint(clickedX, clickedY, '#e74c3c'); // Red
-                    feedbackDisplay.innerText = `Napačno. Kliknil si (${clickedX}, ${clickedY}). Poskusi znova!`;
-                    feedbackDisplay.className = "wrong";
-                }
-            }
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, tx + boxW / 2, ty + boxH / 2);
+      }
+
+      ctx.restore();
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function draw() {
+      bounds = getBounds();
+      step = (size - 2 * pad) / valueCount();
+
+      drawGrid();
+
+      if (mode === "learning") {
+        points.forEach((point) => {
+          drawPoint(point, "#2563eb", `(${point.x}, ${point.y})`);
         });
+      }
 
-        // Initialize
-        drawGrid();
-    </script>
+      if (mode === "game" && target && gameLocked) {
+        drawPoint(target, "#16a34a", `(${target.x}, ${target.y})`);
+      }
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function newTask() {
+      bounds = getBounds();
+      points = [];
+      gameLocked = false;
+
+      if (mode === "game") {
+        target = {
+          x: randomInt(bounds.min, bounds.max),
+          y: randomInt(bounds.min, bounds.max)
+        };
+
+        taskText.textContent = `Poišči točko (${target.x}, ${target.y})`;
+        setFeedback("Klikni pravo presečišče na mreži. Najprej x, potem y.", "info");
+      } else {
+        target = null;
+        taskText.textContent = rangeMode === "four"
+          ? "Učenje: klikni točke v vseh 4 kvadrantih."
+          : "Učenje: klikni točke v 1. kvadrantu.";
+        setFeedback("Klikni na mrežo in dobil boš koordinato. Mini trening, no pressure.", "info");
+      }
+
+      draw();
+    }
+
+    function clearBoard() {
+      points = [];
+      gameLocked = false;
+
+      if (mode === "game") {
+        setFeedback("Tabla počiščena. Naloga ostane ista, lahko klikneš znova.", "info");
+      } else {
+        setFeedback("Tabla je čista. Klikni novo točko.", "info");
+      }
+
+      draw();
+    }
+
+    function hintForClick(point) {
+      if (!target) return "";
+
+      const xOk = point.x === target.x;
+      const yOk = point.y === target.y;
+
+      if (xOk && !yOk) return "x je pravilen, popravi samo y.";
+      if (!xOk && yOk) return "y je pravilen, popravi samo x.";
+
+      const xMove = point.x < target.x ? "desno" : "levo";
+      const yMove = point.y < target.y ? "gor" : "dol";
+
+      return `Malo še: premakni se ${xMove} po x in ${yMove} po y.`;
+    }
+
+    function handleBoardPress(event) {
+      event.preventDefault();
+
+      if (mode === "game" && gameLocked) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const cssX = event.clientX - rect.left;
+      const cssY = event.clientY - rect.top;
+      const point = pixelToCoord(cssX, cssY);
+
+      if (!point) {
+        setFeedback("To je izven mreže. Klikni znotraj koordinatnega polja.", "bad");
+        return;
+      }
+
+      if (mode === "learning") {
+        // Da tabla ne rata totalen kaos, hranimo zadnjih 18 klikov.
+        points.push(point);
+        points = points.slice(-18);
+
+        taskText.textContent = `Zadnja točka: (${point.x}, ${point.y})`;
+        setFeedback(`Točka je (${point.x}, ${point.y}). Najprej x = ${point.x}, potem y = ${point.y}.`, "info");
+        draw();
+        return;
+      }
+
+      draw();
+
+      if (point.x === target.x && point.y === target.y) {
+        score.right += 1;
+        score.streak += 1;
+        updateScore();
+
+        gameLocked = true;
+        drawPoint(point, "#16a34a", `(${point.x}, ${point.y})`);
+        setFeedback(`Yes! To je prava točka (${point.x}, ${point.y}).`, "good");
+
+        window.setTimeout(() => {
+          if (mode === "game") newTask();
+        }, 1100);
+
+        return;
+      }
+
+      score.wrong += 1;
+      score.streak = 0;
+      updateScore();
+
+      drawPoint(point, "#dc2626", `(${point.x}, ${point.y})`);
+      setFeedback(`Ni še. Kliknil si (${point.x}, ${point.y}). ${hintForClick(point)}`, "bad");
+    }
+
+    function resetScore() {
+      score = { right: 0, wrong: 0, streak: 0 };
+      updateScore();
+    }
+
+    modeSelect.addEventListener("change", () => {
+      mode = modeSelect.value;
+      resetScore();
+      newTask();
+    });
+
+    rangeSelect.addEventListener("change", () => {
+      rangeMode = rangeSelect.value;
+      resetScore();
+      newTask();
+    });
+
+    newTaskBtn.addEventListener("click", () => {
+      newTask();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      clearBoard();
+    });
+
+    canvas.addEventListener("pointerdown", handleBoardPress);
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+    });
+
+    // Start it up, pa gremo.
+    updateScore();
+    resizeCanvas();
+    newTask();
+  </script>
 </body>
 </html>
