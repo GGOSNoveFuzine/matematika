@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Negativna števila — mini trening</title>
+  <style>
+    :root {
+      --bg: #eef3f9;
+      --card: #ffffff;
+      --text: #192231;
+      --muted: #64748b;
+      --brand: #2563eb;
+      --brand-dark: #1d4ed8;
+      --good: #15803d;
+      --bad: #b91c1c;
+      --warn: #b45309;
+      --line: #d8e0ee;
+      --soft: #f8fafc;
+      --shadow: 0 18px 35px rgba(15, 23, 42, 0.12);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 32rem),
+        linear-gradient(135deg, #eef3f9 0%, #e8edf7 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    main {
+      width: min(960px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 10px 8px 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 4rem);
+      letter-spacing: -0.06em;
+      color: #0f172a;
+    }
+
+    .subtitle {
+      margin: 8px auto 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 720px;
+      line-height: 1.5;
+    }
+
+    .app {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(16px, 3vw, 28px);
+      display: grid;
+      gap: 18px;
+    }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 760px) {
+      .top-row {
+        grid-template-columns: 1fr auto;
+        align-items: end;
+      }
+    }
+
+    .settings {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      align-items: end;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #334155;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    select,
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 12px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    select:focus,
+    input[type="number"]:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .toggle-label {
+      align-self: stretch;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 49px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-label input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--brand);
+    }
+
+    .toggle-label span {
+      font-size: 0.92rem;
+      font-weight: 850;
+      color: #334155;
+    }
+
+    .help-area.hidden {
+      display: none;
+    }
+
+    .score-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      min-width: min(360px, 100%);
+    }
+
+    .pill {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .pill strong {
+      display: block;
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .pill span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 4px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .task-card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(180deg, #ffffff, #f9fbff);
+      padding: clamp(18px, 4vw, 30px);
+      display: grid;
+      gap: 18px;
+      text-align: center;
+    }
+
+    .prompt-small {
+      color: var(--muted);
+      font-weight: 750;
+      letter-spacing: 0.02em;
+    }
+
+    .expression {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(3rem, 13vw, 7rem);
+      font-weight: 900;
+      letter-spacing: -0.08em;
+      line-height: 1;
+      color: #0f172a;
+      word-break: keep-all;
+    }
+
+    .answer-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      max-width: 560px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (min-width: 560px) {
+      .answer-row {
+        grid-template-columns: 1fr auto auto;
+      }
+    }
+
+    #answer {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 850;
+      padding: 14px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.18s ease, box-shadow 0.18s ease;
+      min-height: 54px;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .primary {
+      color: #fff;
+      background: var(--brand);
+      box-shadow: 0 10px 18px rgba(37, 99, 235, 0.22);
+    }
+
+    .primary:hover {
+      background: var(--brand-dark);
+    }
+
+    .ghost {
+      color: #1e293b;
+      background: #e8eef8;
+    }
+
+    .ghost:hover {
+      background: #dce6f5;
+    }
+
+    .feedback {
+      min-height: 58px;
+      border-radius: 18px;
+      padding: 14px 16px;
+      display: grid;
+      place-items: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid var(--line);
+    }
+
+    .feedback.good {
+      background: #dcfce7;
+      color: var(--good);
+      border-color: #bbf7d0;
+    }
+
+    .feedback.bad {
+      background: #fee2e2;
+      color: var(--bad);
+      border-color: #fecaca;
+    }
+
+    .feedback.warn {
+      background: #ffedd5;
+      color: var(--warn);
+      border-color: #fed7aa;
+    }
+
+    .numberline-wrap {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #ffffff;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    canvas {
+      width: 100%;
+      min-width: 620px;
+      height: 150px;
+      display: block;
+      border-radius: 14px;
+      background: #fbfdff;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      padding: 14px 16px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 900;
+      color: #1e293b;
+    }
+
+    .tips {
+      margin: 12px 0 0;
+      color: #475569;
+      line-height: 1.55;
+    }
+
+    .tips code {
+      background: #eef2ff;
+      border: 1px solid #dbe4ff;
+      padding: 2px 6px;
+      border-radius: 8px;
+      color: #1e3a8a;
+      font-weight: 800;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Negativna števila</h1>
+      <p class="subtitle">
+        Mini trening za račune tipa −3 + 5, −3 − 5, 6 − (−2), −2 − 3.
+        Hitro, jasno, brez kompliciranja.
+      </p>
+    </section>
+
+    <section class="app" aria-label="Aplikacija za vajo negativnih števil">
+      <div class="top-row">
+        <div class="settings">
+          <label>
+            Način
+            <select id="mode">
+              <option value="mixed">Mešano: + in −</option>
+              <option value="add">Samo seštevanje</option>
+              <option value="sub">Samo odštevanje</option>
+              <option value="tricky">Več oklepajev</option>
+            </select>
+          </label>
+
+          <label>
+            Razpon števil
+            <select id="range">
+              <option value="5">−5 do 5</option>
+              <option value="10" selected>−10 do 10</option>
+              <option value="20">−20 do 20</option>
+            </select>
+          </label>
+
+          <label>
+            Prikaz
+            <select id="style">
+              <option value="clean" selected>Clean zapis</option>
+              <option value="brackets">Več oklepajev</option>
+            </select>
+          </label>
+
+          <label class="toggle-label" title="Skrije številsko premico in mini pravila spodaj.">
+            <input id="showHelp" type="checkbox" checked />
+            <span>Pokaži pomoč spodaj</span>
+          </label>
+        </div>
+
+        <div class="score-strip" aria-label="Točkovanje">
+          <div class="pill">
+            <strong id="okCount">0</strong>
+            <span>pravilno</span>
+          </div>
+          <div class="pill">
+            <strong id="badCount">0</strong>
+            <span>napačno</span>
+          </div>
+          <div class="pill">
+            <strong id="streakCount">0</strong>
+            <span>streak</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="prompt-small">Izračunaj:</div>
+        <div id="expression" class="expression" aria-live="polite">−3 + 5</div>
+
+        <div class="answer-row">
+          <input
+            id="answer"
+            type="number"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="rezultat"
+            aria-label="Vpiši rezultat"
+          />
+          <button class="primary" id="checkBtn">Preveri</button>
+          <button class="ghost" id="nextBtn">Nova</button>
+        </div>
+
+        <div id="feedback" class="feedback">
+          Vpiši odgovor in pritisni Enter.
+        </div>
+      </div>
+
+      <div id="helpArea" class="help-area">
+        <div class="numberline-wrap" aria-label="Številska premica">
+          <canvas id="lineCanvas" width="900" height="150"></canvas>
+        </div>
+
+        <details>
+          <summary>Mini pravila, da ne gre brain v error</summary>
+          <div class="tips">
+            <p><code>a + b</code>: premakneš se za <strong>b</strong>. Če je b negativen, greš levo.</p>
+            <p><code>a − b</code>: odštevanje pomeni “obrni smer”. Zato je <code>6 − (−2)</code> enako <code>6 + 2</code>.</p>
+            <p>Oklepaji samo pomagajo, da minus pred številom ne zgleda kot znak za odštevanje.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      Tip: Enter = preveri. Nova naloga se zamenja šele, ko klikneš Nova.
+    </div>
+  </main>
+
+  <script>
+    // Tiny practice app. Ni rocket science, samo clean flow za mini minus vibe.
+    const els = {
+      mode: document.getElementById("mode"),
+      range: document.getElementById("range"),
+      style: document.getElementById("style"),
+      showHelp: document.getElementById("showHelp"),
+      helpArea: document.getElementById("helpArea"),
+      expression: document.getElementById("expression"),
+      answer: document.getElementById("answer"),
+      checkBtn: document.getElementById("checkBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      feedback: document.getElementById("feedback"),
+      okCount: document.getElementById("okCount"),
+      badCount: document.getElementById("badCount"),
+      streakCount: document.getElementById("streakCount"),
+      canvas: document.getElementById("lineCanvas")
+    };
+
+    const ctx = els.canvas.getContext("2d");
+
+    let task = null;
+    let checkedThisRound = false;
+    let stats = {
+      ok: 0,
+      bad: 0,
+      streak: 0
+    };
+
+    function randInt(min, max) {
+      // Inclusive, ker učitelj rabi tudi -10 in 10, ne samo skoraj tam.
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function sampleNonZero(min, max) {
+      // Zero je legalen, ampak ne all the time. Malo bolj spicy naloge.
+      let value = 0;
+      while (value === 0) value = randInt(min, max);
+      return value;
+    }
+
+    function niceMinus(text) {
+      return String(text).replaceAll("-", "−");
+    }
+
+    function fmtNumber(n, forceBrackets = false) {
+      // Negative number? Wrap it if it could look messy. Lepše za učence.
+      if (n < 0) return forceBrackets ? `(−${Math.abs(n)})` : `−${Math.abs(n)}`;
+      return String(n);
+    }
+
+    function fmtSecond(n, useBrackets) {
+      return n < 0 ? `(−${Math.abs(n)})` : String(n);
+    }
+
+    function makeTask() {
+      const limit = Number(els.range.value);
+      const min = -limit;
+      const max = limit;
+      const mode = els.mode.value;
+
+      let a = randInt(min, max);
+      let b = randInt(min, max);
+      let op = Math.random() < 0.5 ? "+" : "-";
+
+      if (mode === "add") op = "+";
+      if (mode === "sub") op = "-";
+
+      // Tricky mode bias: več negativnih drugih členov, ker 6 - (-2) je classic boss.
+      if (mode === "tricky") {
+        op = Math.random() < 0.7 ? "-" : "+";
+        b = -Math.abs(sampleNonZero(min, max));
+        a = randInt(min, max);
+      }
+
+      const answer = op === "+" ? a + b : a - b;
+      const heavyBrackets = els.style.value === "brackets" || mode === "tricky";
+      const first = fmtNumber(a, heavyBrackets && a < 0);
+      const second = fmtSecond(b, heavyBrackets || b < 0);
+      const shown = `${first} ${op} ${second}`;
+
+      return { a, b, op, answer, shown };
+    }
+
+    function newTask() {
+      task = makeTask();
+      checkedThisRound = false;
+      els.expression.textContent = niceMinus(task.shown);
+      els.answer.value = "";
+      setFeedback("Vpiši odgovor in pritisni Enter. Po preverjanju klikni Nova za naslednjo.", "");
+      els.answer.focus();
+      drawNumberLine();
+    }
+
+    function setFeedback(message, type) {
+      els.feedback.textContent = message;
+      els.feedback.className = `feedback ${type || ""}`.trim();
+    }
+
+    function updateStats() {
+      els.okCount.textContent = stats.ok;
+      els.badCount.textContent = stats.bad;
+      els.streakCount.textContent = stats.streak;
+    }
+
+    function explainTask() {
+      const a = task.a;
+      const b = task.b;
+      if (task.op === "+") {
+        const direction = b >= 0 ? "desno" : "levo";
+        return `Start pri ${a}, potem ${Math.abs(b)} korakov ${direction}. Rezultat je ${task.answer}.`;
+      }
+
+      const direction = b >= 0 ? "levo" : "desno";
+      const signText = b >= 0 ? `${b}` : `(${niceMinus(b)})`;
+      return `Odšteješ ${signText}: obrneš smer, greš ${Math.abs(b)} korakov ${direction}. Rezultat je ${task.answer}.`;
+    }
+
+    function checkAnswer() {
+      if (!task) return;
+
+      const raw = els.answer.value.trim();
+      if (raw === "") {
+        setFeedback("Vpiši nekaj 🙂", "warn");
+        els.answer.focus();
+        return;
+      }
+
+      const user = Number(raw);
+      if (!Number.isInteger(user)) {
+        setFeedback("Tu treniramo cela števila. No decimal drama.", "warn");
+        els.answer.focus();
+        return;
+      }
+
+      if (user === task.answer) {
+        if (!checkedThisRound) {
+          stats.ok += 1;
+          stats.streak += 1;
+          updateStats();
+        }
+        checkedThisRound = true;
+        const fire = stats.streak >= 3 ? " 🔥" : "";
+        setFeedback(`Pravilno! ${explainTask()}${fire} Klikni Nova, ko si ready za next.`, "good");
+        els.nextBtn.focus();
+        return;
+      }
+
+      if (!checkedThisRound) {
+        stats.bad += 1;
+        stats.streak = 0;
+        updateStats();
+      }
+      checkedThisRound = true;
+
+      const diff = user - task.answer;
+      const hint = Math.abs(diff) <= 2
+        ? "Zelo blizu, check the sign."
+        : "Pazi minus in oklepaje.";
+      setFeedback(`Ni še. ${hint} ${explainTask()} Vzemi par sekund, potem klikni Nova.`, "bad");
+      els.answer.select();
+    }
+
+    function drawNumberLine() {
+      if (!els.showHelp.checked) return;
+      const canvas = els.canvas;
+      const width = canvas.width;
+      const height = canvas.height;
+      const limit = Math.max(Number(els.range.value) * 2, 10);
+      const min = -limit;
+      const max = limit;
+      const y = 76;
+      const pad = 46;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Base line, clean and calm.
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#334155";
+      ctx.beginPath();
+      ctx.moveTo(pad, y);
+      ctx.lineTo(width - pad, y);
+      ctx.stroke();
+
+      ctx.fillStyle = "#334155";
+      ctx.beginPath();
+      ctx.moveTo(width - pad, y);
+      ctx.lineTo(width - pad - 12, y - 7);
+      ctx.lineTo(width - pad - 12, y + 7);
+      ctx.closePath();
+      ctx.fill();
+
+      function xFor(n) {
+        return pad + ((n - min) / (max - min)) * (width - 2 * pad);
+      }
+
+      ctx.font = "700 14px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+
+      for (let n = min; n <= max; n++) {
+        const x = xFor(n);
+        const major = n % 5 === 0 || n === 0;
+        ctx.strokeStyle = major ? "#334155" : "#94a3b8";
+        ctx.lineWidth = major ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y - (major ? 12 : 7));
+        ctx.lineTo(x, y + (major ? 12 : 7));
+        ctx.stroke();
+
+        if (major) {
+          ctx.fillStyle = n === 0 ? "#2563eb" : "#475569";
+          ctx.fillText(niceMinus(n), x, y + 18);
+        }
+      }
+
+      if (!task) return;
+
+      const start = task.a;
+      const end = task.answer;
+      const sx = xFor(start);
+      const ex = xFor(end);
+      const arcTop = y - 38;
+
+      // Start marker.
+      ctx.fillStyle = "#2563eb";
+      ctx.beginPath();
+      ctx.arc(sx, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1e3a8a";
+      ctx.font = "800 13px system-ui, sans-serif";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("start", sx, y - 14);
+
+      // Result marker.
+      ctx.fillStyle = "#16a34a";
+      ctx.beginPath();
+      ctx.arc(ex, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#166534";
+      ctx.fillText("rezultat", ex, y - 14);
+
+      // Jump line. Just enough visual help, not a full proof.
+      ctx.strokeStyle = "#f97316";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sx, y - 5);
+      ctx.quadraticCurveTo((sx + ex) / 2, arcTop, ex, y - 5);
+      ctx.stroke();
+
+      // Arrow head on the jump.
+      const dir = ex >= sx ? 1 : -1;
+      ctx.fillStyle = "#f97316";
+      ctx.beginPath();
+      ctx.moveTo(ex, y - 5);
+      ctx.lineTo(ex - dir * 12, y - 12);
+      ctx.lineTo(ex - dir * 8, y + 1);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#9a3412";
+      ctx.font = "850 15px system-ui, sans-serif";
+      ctx.textBaseline = "bottom";
+      const label = task.op === "+"
+        ? `${task.b >= 0 ? "+" : "−"}${Math.abs(task.b)}`
+        : `− ${fmtSecond(task.b, task.b < 0)}`;
+      ctx.fillText(niceMinus(label), (sx + ex) / 2, arcTop - 8);
+    }
+
+    function updateHelpVisibility() {
+      // Help panel on/off. Včasih rabiš scaffold, včasih pa full solo mode.
+      const visible = els.showHelp.checked;
+      els.helpArea.classList.toggle("hidden", !visible);
+      if (visible) drawNumberLine();
+    }
+
+    els.checkBtn.addEventListener("click", checkAnswer);
+    els.nextBtn.addEventListener("click", newTask);
+    els.showHelp.addEventListener("change", updateHelpVisibility);
+
+    els.answer.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") checkAnswer();
+    });
+
+    [els.mode, els.range, els.style].forEach((control) => {
+      control.addEventListener("change", newTask);
+    });
+
+    // Resize? Canvas je fixed internal, CSS handles look. This is enough for class use.
+    updateStats();
+    updateHelpVisibility();
+    newTask();
+  </script>
+</body>
+</html>
