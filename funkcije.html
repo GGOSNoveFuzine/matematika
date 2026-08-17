@@ -1,0 +1,1561 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vadba lastnosti funkcij</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #17202a;
+      --muted: #667085;
+      --line: #d9dee7;
+      --accent: #2557a7;
+      --accent-soft: #eaf1ff;
+      --good: #157347;
+      --good-bg: #e9f7ef;
+      --bad: #b42318;
+      --bad-bg: #fff0ee;
+      --miss: #a15c00;
+      --miss-bg: #fff7e6;
+      --shadow: 0 8px 30px rgba(20, 34, 52, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .app {
+      width: min(920px, calc(100% - 28px));
+      margin: 24px auto 48px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: clamp(24px, 4vw, 34px);
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 7px 10px;
+      min-width: 72px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(20,34,52,.04);
+    }
+
+    .stat strong { display: block; font-size: 18px; }
+    .stat span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+
+    .filters {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .field label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    select, button {
+      font: inherit;
+    }
+
+    select {
+      width: 100%;
+      min-height: 40px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .reset-btn {
+      align-self: end;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 9px;
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: clamp(18px, 3vw, 30px);
+      box-shadow: var(--shadow);
+    }
+
+    .family {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .expression {
+      background: #f8fafc;
+      border: 1px solid #e6eaf0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: clamp(27px, 5vw, 38px);
+      text-align: center;
+      margin-bottom: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .property {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .instruction {
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .options {
+      display: grid;
+      gap: 9px;
+      margin-bottom: 18px;
+    }
+
+    .option {
+      display: grid;
+      grid-template-columns: 24px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 10px 12px;
+      cursor: pointer;
+      background: #fff;
+      transition: border-color .15s ease, background .15s ease, transform .05s ease;
+    }
+
+    .option:hover:not(.locked) {
+      border-color: #aebbd0;
+      background: #fbfcfe;
+    }
+
+    .option:active:not(.locked) { transform: translateY(1px); }
+
+    .option input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      margin: 0;
+    }
+
+    .option .mark {
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .option.correct-selected {
+      border-color: #78c69c;
+      background: var(--good-bg);
+    }
+    .option.correct-selected .mark { color: var(--good); }
+
+    .option.wrong-selected {
+      border-color: #f0a49e;
+      background: var(--bad-bg);
+    }
+    .option.wrong-selected .mark { color: var(--bad); }
+
+    .option.missed-correct {
+      border-color: #e7b55e;
+      background: var(--miss-bg);
+    }
+    .option.missed-correct .mark { color: var(--miss); }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .primary {
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      min-height: 44px;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .next-btn { display: none; }
+
+    .feedback {
+      display: none;
+      margin-top: 18px;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+
+    .feedback.show { display: block; }
+
+    .feedback-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .feedback-title.good { color: var(--good); }
+    .feedback-title.bad { color: var(--bad); }
+
+    .feedback-text {
+      color: #344054;
+      margin-bottom: 8px;
+    }
+
+    .correct-list {
+      background: #f8fafc;
+      border: 1px solid #e6eaf0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .graph-panel {
+      margin-top: 14px;
+      border: 1px solid #e6eaf0;
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .graph-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      padding: 10px 12px 8px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e6eaf0;
+    }
+
+    .graph-title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .graph-note {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .graph-wrap {
+      width: 100%;
+      min-height: 320px;
+      padding: 8px;
+      background: #fff;
+    }
+
+    .graph-wrap svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 390px;
+    }
+
+    .graph-legend {
+      padding: 0 12px 10px;
+      color: #475467;
+      font-size: 12px;
+    }
+
+    .mindmap-panel {
+      margin-bottom: 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      transition: opacity .15s ease, transform .15s ease;
+    }
+
+    .mindmap-panel.hidden {
+      display: none;
+    }
+
+    .mindmap-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 9px;
+    }
+
+    .mindmap-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #344054;
+    }
+
+    .mindmap-help {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .mindmap-flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .mindmap-node {
+      border: 1px solid #d0d5dd;
+      background: #f8fafc;
+      color: #344054;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .mindmap-node.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(37,87,167,.08);
+    }
+
+    .mindmap-arrow {
+      color: #98a2b3;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .mindmap-anchor {
+      margin-top: 9px;
+      color: #475467;
+      font-size: 12px;
+      min-height: 17px;
+    }
+
+    .mindmap-after {
+      margin-top: 14px;
+      border-top: 1px solid #e6eaf0;
+      padding-top: 12px;
+    }
+
+    .mode-note {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 700px) {
+      .topbar { grid-template-columns: 1fr; }
+      .stats { justify-content: flex-start; }
+      .filters { grid-template-columns: 1fr; }
+      .reset-btn { width: 100%; }
+      .mindmap-head { align-items: flex-start; flex-direction: column; gap: 3px; }
+      .mindmap-help { text-align: left; }
+      .mindmap-arrow { display: none; }
+      .option { grid-template-columns: 24px 1fr; }
+      .option .mark { grid-column: 2; white-space: normal; }
+      .actions { justify-content: stretch; }
+      .actions button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div>
+        <h1>Vadba lastnosti funkcij</h1>
+        <div class="subtitle">Vedno izberi vse možnosti, ki veljajo. Število pravilnih možnosti ni vnaprej znano.</div>
+      </div>
+      <div class="stats" aria-label="Statistika">
+        <div class="stat"><strong id="statTotal">0</strong><span>odgovorov</span></div>
+        <div class="stat"><strong id="statCorrect">0</strong><span>pravilnih</span></div>
+        <div class="stat"><strong id="statAccuracy">–</strong><span>uspeh</span></div>
+        <div class="stat"><strong id="statStreak">0</strong><span>niz</span></div>
+      </div>
+    </div>
+
+    <section class="filters" aria-label="Filtri">
+      <div class="field">
+        <label for="familyFilter">Funkcija</label>
+        <select id="familyFilter">
+          <option value="all">Vse funkcije</option>
+          <option value="powerNatural">Potenčna - naravni eksponent</option>
+          <option value="powerNegative">Potenčna - negativni celi eksponent</option>
+          <option value="root">Korenska</option>
+          <option value="quadratic">Kvadratna</option>
+          <option value="exponential">Eksponentna</option>
+          <option value="logarithmic">Logaritemska</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="propertyFilter">Lastnost</label>
+        <select id="propertyFilter">
+          <option value="all">Vse lastnosti</option>
+          <option value="domain">Definicijsko območje</option>
+          <option value="range">Zaloga vrednosti</option>
+          <option value="monotonicity">Naraščanje / padanje</option>
+          <option value="injectivity">Injektivnost</option>
+          <option value="boundedness">Omejenost</option>
+          <option value="asymptotes">Asimptote</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="modeFilter">Miselni okvir</label>
+        <select id="modeFilter">
+          <option value="study">Učni način - okvir je viden</option>
+          <option value="exam">Izpitni način - okvir šele po odgovoru</option>
+        </select>
+        <div class="mode-note">Cilj: ob besedi »lastnosti« sam prikličeš celoten vrstni red.</div>
+      </div>
+      <button class="reset-btn" id="resetStats" type="button">Ponastavi statistiko</button>
+    </section>
+
+    <section class="mindmap-panel" id="mindmapPanel" aria-label="Miselni okvir za lastnosti funkcije">
+      <div class="mindmap-head">
+        <div class="mindmap-title">🧠 Ko slišiš »povej lastnosti funkcije«</div>
+        <div class="mindmap-help" id="mindmapHelp">Pojdi vedno po istem miselnem vrstnem redu.</div>
+      </div>
+      <div class="mindmap-flow" id="mindmapFlow"></div>
+      <div class="mindmap-anchor" id="mindmapAnchor"></div>
+    </section>
+
+    <section class="card" aria-live="polite">
+      <div class="family" id="familyLabel"></div>
+      <div class="expression" id="expression"></div>
+      <div class="property" id="propertyLabel"></div>
+      <div class="instruction">Izberi vse možnosti, ki veljajo.</div>
+
+      <div class="options" id="options"></div>
+
+      <div class="actions">
+        <button class="primary" id="checkBtn" type="button">Preveri</button>
+        <button class="primary next-btn" id="nextBtn" type="button">Naslednje vprašanje</button>
+      </div>
+
+      <div class="feedback" id="feedback">
+        <div class="feedback-title" id="feedbackTitle"></div>
+        <div class="feedback-text" id="feedbackText"></div>
+        <div class="correct-list" id="correctList"></div>
+        <div class="mindmap-after">
+          <div class="mindmap-title">🧠 Mesto te lastnosti v celotnem odgovoru</div>
+          <div class="mindmap-flow" id="feedbackMindmapFlow" style="margin-top:8px"></div>
+          <div class="mindmap-anchor" id="feedbackMindmapAnchor"></div>
+        </div>
+        <div class="graph-panel" id="graphPanel">
+          <div class="graph-head">
+            <div class="graph-title">Grafični primer</div>
+            <div class="graph-note" id="graphNote"></div>
+          </div>
+          <div class="graph-wrap" id="graphWrap" aria-label="Graf funkcije"></div>
+          <div class="graph-legend" id="graphLegend"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-note">Napredek se shranjuje samo v tem brskalniku (localStorage).</div>
+  </main>
+
+<script>
+(() => {
+  "use strict";
+
+  const PROPERTY_LABELS = {
+    domain: "Definicijsko območje",
+    range: "Zaloga vrednosti",
+    monotonicity: "Naraščanje / padanje",
+    injectivity: "Injektivnost",
+    boundedness: "Omejenost",
+    asymptotes: "Asimptote"
+  };
+
+  const MINDMAP_ORDER = [
+    "domain",
+    "range",
+    "monotonicity",
+    "boundedness",
+    "injectivity",
+    "asymptotes"
+  ];
+
+  const MINDMAP_SHORT = {
+    domain: "D₍f₎",
+    range: "Z₍f₎",
+    monotonicity: "↗ / ↘",
+    boundedness: "omejenost",
+    injectivity: "injektivnost",
+    asymptotes: "asimptote"
+  };
+
+  const MINDMAP_ANCHORS = {
+    domain: "Definicijsko območje → za katere x je funkcija sploh definirana?",
+    range: "Zaloga vrednosti → katere y-vrednosti lahko funkcija doseže?",
+    monotonicity: "Monotonost → kje funkcija narašča in kje pada?",
+    boundedness: "Omejenost → ima zgornjo ali spodnjo mejo oziroma je neomejena?",
+    injectivity: "Injektivnost → ali različna x vedno dajeta različne vrednosti?",
+    asymptotes: "Asimptote → ali se graf približuje kakšni premici?"
+  };
+
+  const FAMILY_IDS = [
+    "powerNatural",
+    "powerNegative",
+    "root",
+    "quadratic",
+    "exponential",
+    "logarithmic"
+  ];
+
+  const PROPERTY_IDS = [...MINDMAP_ORDER];
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const shuffle = arr => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  const option = (id, text) => ({ id, text });
+
+  const DOMAIN_OPTIONS = [
+    option("R", "ℝ"),
+    option("R0+", "ℝ₀⁺"),
+    option("R+", "ℝ⁺"),
+    option("R\\0", "ℝ \\ {0}")
+  ];
+
+  const RANGE_BASE_OPTIONS = [
+    option("R", "ℝ"),
+    option("R0+", "ℝ₀⁺"),
+    option("R+", "ℝ⁺"),
+    option("R\\0", "ℝ \\ {0}")
+  ];
+
+  const INJECTIVITY_OPTIONS = [
+    option("injYes", "Funkcija je injektivna."),
+    option("injNo", "Funkcija ni injektivna.")
+  ];
+
+  const BOUNDEDNESS_OPTIONS = [
+    option("upperBounded", "Navzgor je omejena."),
+    option("lowerBounded", "Navzdol je omejena."),
+    option("upperUnbounded", "Navzgor je neomejena."),
+    option("lowerUnbounded", "Navzdol je neomejena.")
+  ];
+
+  const ASYMPTOTE_OPTIONS = [
+    option("x0", "x = 0 je navpična asimptota."),
+    option("y0", "y = 0 je vodoravna asimptota."),
+    option("x1", "x = 1 je navpična asimptota."),
+    option("y1", "y = 1 je vodoravna asimptota."),
+    option("none", "Funkcija nima asimptot.")
+  ];
+
+  function makePowerNatural() {
+    const n = pick([2, 3, 4, 5, 6, 7]);
+    return {
+      familyId: "powerNatural",
+      familyLabel: "Potenčna funkcija - naravni eksponent",
+      expressionHtml: `f(x) = x<sup>${n}</sup>`,
+      kind: n % 2 === 0 ? "even" : "odd",
+      n
+    };
+  }
+
+  function makePowerNegative() {
+    const n = -pick([1, 2, 3, 4, 5, 6]);
+    return {
+      familyId: "powerNegative",
+      familyLabel: "Potenčna funkcija - negativni celi eksponent",
+      expressionHtml: `f(x) = x<sup>${n}</sup> = 1/x<sup>${Math.abs(n)}</sup>`,
+      kind: Math.abs(n) % 2 === 0 ? "even" : "odd",
+      n
+    };
+  }
+
+  function makeRoot() {
+    const cube = Math.random() < 0.5;
+    return {
+      familyId: "root",
+      familyLabel: "Korenska funkcija",
+      expressionHtml: cube ? "f(x) = ∛x" : "f(x) = √x",
+      kind: cube ? "cube" : "square"
+    };
+  }
+
+  function signedTerm(p) {
+    if (p > 0) return `(x − ${p})`;
+    return `(x + ${Math.abs(p)})`;
+  }
+
+  function makeQuadratic() {
+    const a = pick([-3, -2, -1, 1, 2, 3]);
+    const p = pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+    const q = pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+    const core = `${signedTerm(p)}<sup>2</sup>`;
+    let left;
+    if (a === 1) left = core;
+    else if (a === -1) left = `−${core}`;
+    else left = `${a}${core}`;
+    const tail = q > 0 ? ` + ${q}` : ` − ${Math.abs(q)}`;
+    return {
+      familyId: "quadratic",
+      familyLabel: "Kvadratna funkcija",
+      expressionHtml: `f(x) = ${left}${tail}`,
+      a, p, q
+    };
+  }
+
+  function makeExponential() {
+    const growing = Math.random() < 0.5;
+    const b = pick([2, 3, 4]);
+    const baseHtml = growing ? `${b}` : `1/${b}`;
+    return {
+      familyId: "exponential",
+      familyLabel: "Eksponentna funkcija",
+      expressionHtml: `f(x) = (${baseHtml})<sup>x</sup>`,
+      growing,
+      baseHtml,
+      base: growing ? b : 1 / b
+    };
+  }
+
+  function makeLogarithmic() {
+    const growing = Math.random() < 0.5;
+    const b = pick([2, 3, 4]);
+    const baseHtml = growing ? `${b}` : `1/${b}`;
+    return {
+      familyId: "logarithmic",
+      familyLabel: "Logaritemska funkcija",
+      expressionHtml: `f(x) = log<sub>${baseHtml}</sub>(x)`,
+      growing,
+      baseHtml,
+      base: growing ? b : 1 / b
+    };
+  }
+
+  const FAMILY_MAKERS = {
+    powerNatural: makePowerNatural,
+    powerNegative: makePowerNegative,
+    root: makeRoot,
+    quadratic: makeQuadratic,
+    exponential: makeExponential,
+    logarithmic: makeLogarithmic
+  };
+
+  function qDomain(inst) {
+    let correct, explanation;
+    switch (inst.familyId) {
+      case "powerNatural":
+      case "quadratic":
+      case "exponential":
+        correct = ["R"];
+        explanation = "Funkcija je definirana za vsako realno število x.";
+        break;
+      case "powerNegative":
+        correct = ["R\\0"];
+        explanation = "Ker je negativna potenca enaka ulomku, x = 0 ni dovoljen. Zato je D<sub>f</sub> = ℝ \\ {0}.";
+        break;
+      case "root":
+        if (inst.kind === "square") {
+          correct = ["R0+"];
+          explanation = "Pri √x mora biti korenjenec nenegativen, zato je D<sub>f</sub> = ℝ₀⁺.";
+        } else {
+          correct = ["R"];
+          explanation = "Kubični koren je definiran za vsa realna števila, zato je D<sub>f</sub> = ℝ.";
+        }
+        break;
+      case "logarithmic":
+        correct = ["R+"];
+        explanation = "Logaritem je definiran samo za x &gt; 0, zato je D<sub>f</sub> = ℝ⁺.";
+        break;
+    }
+    return makeQuestion(inst, "domain", DOMAIN_OPTIONS, correct, explanation);
+  }
+
+  function qRange(inst) {
+    let options = RANGE_BASE_OPTIONS;
+    let correct, explanation;
+    switch (inst.familyId) {
+      case "powerNatural":
+        if (inst.kind === "even") {
+          correct = ["R0+"];
+          explanation = "Soda naravna potenca ne more biti negativna in doseže tudi 0, zato je Z<sub>f</sub> = ℝ₀⁺.";
+        } else {
+          correct = ["R"];
+          explanation = "Liha naravna potenca doseže vse realne vrednosti, zato je Z<sub>f</sub> = ℝ.";
+        }
+        break;
+      case "powerNegative":
+        if (inst.kind === "even") {
+          correct = ["R+"];
+          explanation = "Pri sodem negativnem eksponentu so vrednosti vedno pozitivne, 0 pa funkcija nikoli ne doseže. Zato je Z<sub>f</sub> = ℝ⁺.";
+        } else {
+          correct = ["R\\0"];
+          explanation = "Pri lihem negativnem eksponentu dobimo vse pozitivne in negativne vrednosti razen 0. Zato je Z<sub>f</sub> = ℝ \\ {0}.";
+        }
+        break;
+      case "root":
+        if (inst.kind === "square") {
+          correct = ["R0+"];
+          explanation = "√x je vedno nenegativen in lahko doseže 0, zato je Z<sub>f</sub> = ℝ₀⁺.";
+        } else {
+          correct = ["R"];
+          explanation = "∛x doseže vsako realno vrednost, zato je Z<sub>f</sub> = ℝ.";
+        }
+        break;
+      case "quadratic": {
+        const upId = `qUp${inst.q}`;
+        const downId = `qDown${inst.q}`;
+        const upText = `[${inst.q}, ∞)`;
+        const downText = `(−∞, ${inst.q}]`;
+        options = [
+          option(upId, upText),
+          option(downId, downText),
+          option("R", "ℝ"),
+          option("R+", "ℝ⁺")
+        ];
+        if (inst.a > 0) {
+          correct = [upId];
+          explanation = `Parabola je obrnjena navzgor in ima minimum y = ${inst.q}. Zato je Z<sub>f</sub> = ${upText}.`;
+        } else {
+          correct = [downId];
+          explanation = `Parabola je obrnjena navzdol in ima maksimum y = ${inst.q}. Zato je Z<sub>f</sub> = ${downText}.`;
+        }
+        break;
+      }
+      case "exponential":
+        correct = ["R+"];
+        explanation = "Eksponentna funkcija ima vedno pozitivne vrednosti in nikoli ne doseže 0, zato je Z<sub>f</sub> = ℝ⁺.";
+        break;
+      case "logarithmic":
+        correct = ["R"];
+        explanation = "Logaritemska funkcija lahko zavzame poljubno realno vrednost, zato je Z<sub>f</sub> = ℝ.";
+        break;
+    }
+    return makeQuestion(inst, "range", options, correct, explanation);
+  }
+
+  function qMonotonicity(inst) {
+    let options, correct, explanation;
+    const whole = [
+      option("incAll", "Narašča na celotnem definicijskem območju."),
+      option("decAll", "Pada na celotnem definicijskem območju."),
+      option("notMono", "Na celotnem definicijskem območju ni monotona."),
+      option("constant", "Je konstantna.")
+    ];
+
+    switch (inst.familyId) {
+      case "powerNatural":
+        if (inst.kind === "odd") {
+          options = whole;
+          correct = ["incAll"];
+          explanation = "Potenčna funkcija z lihim naravnim eksponentom narašča na celotni realni osi.";
+        } else {
+          options = [
+            option("decLeft0", "Pada na (−∞, 0)."),
+            option("incLeft0", "Narašča na (−∞, 0)."),
+            option("incRight0", "Narašča na (0, ∞)."),
+            option("decRight0", "Pada na (0, ∞)."),
+            option("incAll", "Narašča na celotnem definicijskem območju.")
+          ];
+          correct = ["decLeft0", "incRight0"];
+          explanation = "Pri sodem naravnem eksponentu funkcija do 0 pada, po 0 pa narašča.";
+        }
+        break;
+      case "powerNegative":
+        options = [
+          option("decLeft0", "Pada na (−∞, 0)."),
+          option("incLeft0", "Narašča na (−∞, 0)."),
+          option("incRight0", "Narašča na (0, ∞)."),
+          option("decRight0", "Pada na (0, ∞)."),
+          option("incAll", "Narašča na celotnem definicijskem območju."),
+          option("decAll", "Pada na celotnem definicijskem območju.")
+        ];
+        if (inst.kind === "even") {
+          correct = ["incLeft0", "decRight0"];
+          explanation = "Pri sodem negativnem eksponentu funkcija na levi veji narašča, na desni pa pada.";
+        } else {
+          correct = ["decLeft0", "decRight0"];
+          explanation = "Pri lihem negativnem eksponentu funkcija pada na vsakem od intervalov (−∞,0) in (0,∞).";
+        }
+        break;
+      case "root":
+        options = whole;
+        correct = ["incAll"];
+        explanation = inst.kind === "square"
+          ? "Funkcija √x narašča na svojem celotnem definicijskem območju [0,∞)."
+          : "Funkcija ∛x narašča na celotni realni osi.";
+        break;
+      case "quadratic": {
+        const p = inst.p;
+        options = [
+          option("incLeftP", `Narašča na (−∞, ${p}).`),
+          option("decLeftP", `Pada na (−∞, ${p}).`),
+          option("incRightP", `Narašča na (${p}, ∞).`),
+          option("decRightP", `Pada na (${p}, ∞).`),
+          option("incAll", "Narašča na celotnem definicijskem območju."),
+          option("decAll", "Pada na celotnem definicijskem območju.")
+        ];
+        if (inst.a > 0) {
+          correct = ["decLeftP", "incRightP"];
+          explanation = `Ker je a &gt; 0, je teme pri x = ${p} minimum: do temena funkcija pada, nato narašča.`;
+        } else {
+          correct = ["incLeftP", "decRightP"];
+          explanation = `Ker je a &lt; 0, je teme pri x = ${p} maksimum: do temena funkcija narašča, nato pada.`;
+        }
+        break;
+      }
+      case "exponential":
+        options = whole;
+        correct = [inst.growing ? "incAll" : "decAll"];
+        explanation = inst.growing
+          ? "Ker je osnova a &gt; 1, eksponentna funkcija narašča."
+          : "Ker je 0 &lt; a &lt; 1, eksponentna funkcija pada.";
+        break;
+      case "logarithmic":
+        options = whole;
+        correct = [inst.growing ? "incAll" : "decAll"];
+        explanation = inst.growing
+          ? "Ker je osnova a &gt; 1, logaritemska funkcija narašča."
+          : "Ker je 0 &lt; a &lt; 1, logaritemska funkcija pada.";
+        break;
+    }
+    return makeQuestion(inst, "monotonicity", options, correct, explanation);
+  }
+
+  function qInjectivity(inst) {
+    let yes, explanation;
+    switch (inst.familyId) {
+      case "powerNatural":
+        yes = inst.kind === "odd";
+        explanation = yes
+          ? "Liha potenčna funkcija je strogo naraščajoča, zato različna x ne dajeta iste vrednosti."
+          : "Soda potenčna funkcija ni injektivna, saj na primer f(x) = f(−x).";
+        break;
+      case "powerNegative":
+        yes = inst.kind === "odd";
+        explanation = yes
+          ? "Pri lihem negativnem eksponentu vsaki vrednosti iz zaloge pripada natanko en x."
+          : "Pri sodem negativnem eksponentu velja f(x) = f(−x), zato funkcija ni injektivna.";
+        break;
+      case "root":
+        yes = true;
+        explanation = "Korenska funkcija je na svojem definicijskem območju strogo naraščajoča, zato je injektivna.";
+        break;
+      case "quadratic":
+        yes = false;
+        explanation = "Kvadratna funkcija na celotnem ℝ ni injektivna zaradi simetrije parabole glede na os skozi teme.";
+        break;
+      case "exponential":
+      case "logarithmic":
+        yes = true;
+        explanation = "Funkcija je strogo monotona na celotnem definicijskem območju, zato je injektivna.";
+        break;
+    }
+    return makeQuestion(inst, "injectivity", INJECTIVITY_OPTIONS, [yes ? "injYes" : "injNo"], explanation);
+  }
+
+  function qBoundedness(inst) {
+    let correct, explanation;
+    switch (inst.familyId) {
+      case "powerNatural":
+        if (inst.kind === "even") {
+          correct = ["lowerBounded", "upperUnbounded"];
+          explanation = "Soda naravna potenca je najmanj 0, navzgor pa nima meje.";
+        } else {
+          correct = ["upperUnbounded", "lowerUnbounded"];
+          explanation = "Liha naravna potenca gre proti +∞ in proti −∞, zato ni omejena ne navzgor ne navzdol.";
+        }
+        break;
+      case "powerNegative":
+        if (inst.kind === "even") {
+          correct = ["lowerBounded", "upperUnbounded"];
+          explanation = "Vrednosti so pozitivne, zato je funkcija navzdol omejena z 0; pri x → 0 pa gre proti +∞.";
+        } else {
+          correct = ["upperUnbounded", "lowerUnbounded"];
+          explanation = "Pri lihem negativnem eksponentu vrednosti v bližini 0 segajo proti +∞ in −∞.";
+        }
+        break;
+      case "root":
+        if (inst.kind === "square") {
+          correct = ["lowerBounded", "upperUnbounded"];
+          explanation = "√x je vedno ≥ 0, navzgor pa nima meje.";
+        } else {
+          correct = ["upperUnbounded", "lowerUnbounded"];
+          explanation = "∛x dosega poljubno velike pozitivne in negativne vrednosti.";
+        }
+        break;
+      case "quadratic":
+        if (inst.a > 0) {
+          correct = ["lowerBounded", "upperUnbounded"];
+          explanation = `Parabola ima minimum y = ${inst.q}, zato je navzdol omejena, navzgor pa neomejena.`;
+        } else {
+          correct = ["upperBounded", "lowerUnbounded"];
+          explanation = `Parabola ima maksimum y = ${inst.q}, zato je navzgor omejena, navzdol pa neomejena.`;
+        }
+        break;
+      case "exponential":
+        correct = ["lowerBounded", "upperUnbounded"];
+        explanation = "Eksponentna funkcija ima pozitivne vrednosti, zato je navzdol omejena z 0; navzgor pa je neomejena.";
+        break;
+      case "logarithmic":
+        correct = ["upperUnbounded", "lowerUnbounded"];
+        explanation = "Logaritemska funkcija lahko zavzame poljubno veliko pozitivno ali negativno vrednost.";
+        break;
+    }
+    return makeQuestion(inst, "boundedness", BOUNDEDNESS_OPTIONS, correct, explanation);
+  }
+
+  function qAsymptotes(inst) {
+    let correct, explanation;
+    switch (inst.familyId) {
+      case "powerNatural":
+      case "root":
+      case "quadratic":
+        correct = ["none"];
+        explanation = "Ta funkcija v obravnavani obliki nima navpične ali vodoravne asimptote.";
+        break;
+      case "powerNegative":
+        correct = ["x0", "y0"];
+        explanation = "Pri negativni potenci je x = 0 navpična asimptota, y = 0 pa vodoravna asimptota.";
+        break;
+      case "exponential":
+        correct = ["y0"];
+        explanation = "Eksponentna funkcija se približuje abscisni osi, zato je y = 0 vodoravna asimptota.";
+        break;
+      case "logarithmic":
+        correct = ["x0"];
+        explanation = "Logaritemska funkcija je definirana le za x &gt; 0 in ima pri x = 0 navpično asimptoto.";
+        break;
+    }
+    return makeQuestion(inst, "asymptotes", ASYMPTOTE_OPTIONS, correct, explanation);
+  }
+
+  function graphConfig(inst) {
+    switch (inst.familyId) {
+      case "powerNatural":
+        return inst.kind === "even"
+          ? { xMin: -2.3, xMax: 2.3, yMin: -1, yMax: 8 }
+          : { xMin: -2.2, xMax: 2.2, yMin: -8, yMax: 8 };
+      case "powerNegative":
+        return inst.kind === "even"
+          ? { xMin: -5, xMax: 5, yMin: -1, yMax: 7 }
+          : { xMin: -5, xMax: 5, yMin: -7, yMax: 7 };
+      case "root":
+        return inst.kind === "square"
+          ? { xMin: -1, xMax: 9, yMin: -1, yMax: 4 }
+          : { xMin: -9, xMax: 9, yMin: -3.5, yMax: 3.5 };
+      case "quadratic":
+        return inst.a > 0
+          ? { xMin: inst.p - 4, xMax: inst.p + 4, yMin: inst.q - 2, yMax: inst.q + 12 }
+          : { xMin: inst.p - 4, xMax: inst.p + 4, yMin: inst.q - 12, yMax: inst.q + 2 };
+      case "exponential":
+        return { xMin: -4, xMax: 4, yMin: -1, yMax: 10 };
+      case "logarithmic":
+        return { xMin: -1, xMax: 10, yMin: -5, yMax: 5 };
+      default:
+        return { xMin: -5, xMax: 5, yMin: -5, yMax: 5 };
+    }
+  }
+
+  function graphValue(inst, x) {
+    switch (inst.familyId) {
+      case "powerNatural":
+        return Math.pow(x, inst.n);
+      case "powerNegative":
+        if (Math.abs(x) < 1e-9) return NaN;
+        return Math.pow(x, inst.n);
+      case "root":
+        if (inst.kind === "square") return x < 0 ? NaN : Math.sqrt(x);
+        return Math.cbrt(x);
+      case "quadratic":
+        return inst.a * Math.pow(x - inst.p, 2) + inst.q;
+      case "exponential":
+        return Math.pow(inst.base, x);
+      case "logarithmic":
+        return x <= 0 ? NaN : Math.log(x) / Math.log(inst.base);
+      default:
+        return NaN;
+    }
+  }
+
+  function graphHighlight(question) {
+    const inst = question.inst;
+    const p = question.propertyId;
+    const lines = [];
+    let note = "Graf istega primera kot v vprašanju.";
+
+    if (p === "asymptotes") {
+      if (inst.familyId === "powerNegative") {
+        lines.push({ axis: "x", value: 0, label: "x = 0 asimptota", tone: "accent" });
+        lines.push({ axis: "y", value: 0, label: "y = 0 asimptota", tone: "accent" });
+        note = "Črtkani črti prikazujeta asimptoti.";
+      } else if (inst.familyId === "exponential") {
+        lines.push({ axis: "y", value: 0, label: "y = 0 asimptota", tone: "accent" });
+        note = "Vodoravna črtkana črta je asimptota.";
+      } else if (inst.familyId === "logarithmic") {
+        lines.push({ axis: "x", value: 0, label: "x = 0 asimptota", tone: "accent" });
+        note = "Navpična črtkana črta je asimptota.";
+      } else {
+        note = "Ta funkcija v tej obliki nima navpične ali vodoravne asimptote.";
+      }
+    }
+
+    if (p === "boundedness" || p === "range") {
+      if (inst.familyId === "quadratic") {
+        lines.push({ axis: "y", value: inst.q, label: `y = ${inst.q}`, tone: "bound" });
+        note = inst.a > 0
+          ? "Črtkana črta kaže minimum - spodnjo mejo vrednosti."
+          : "Črtkana črta kaže maksimum - zgornjo mejo vrednosti.";
+      } else if (
+        (inst.familyId === "powerNatural" && inst.kind === "even") ||
+        (inst.familyId === "powerNegative" && inst.kind === "even") ||
+        (inst.familyId === "root" && inst.kind === "square") ||
+        inst.familyId === "exponential"
+      ) {
+        lines.push({ axis: "y", value: 0, label: "y = 0", tone: "bound" });
+        note = "Črtkana črta y = 0 pomaga videti spodnjo mejo oziroma mejo zaloge vrednosti.";
+      }
+    }
+
+    if (p === "domain") {
+      if (inst.familyId === "powerNegative" || inst.familyId === "logarithmic") {
+        lines.push({ axis: "x", value: 0, label: "x = 0", tone: "domain" });
+        note = inst.familyId === "logarithmic"
+          ? "Graf obstaja samo za x > 0; x = 0 je meja definicijskega območja."
+          : "Pri x = 0 funkcija ni definirana.";
+      } else if (inst.familyId === "root" && inst.kind === "square") {
+        lines.push({ axis: "x", value: 0, label: "x = 0", tone: "domain" });
+        note = "Graf √x se začne pri x = 0 in obstaja samo za x ≥ 0.";
+      }
+    }
+
+    if (p === "injectivity") {
+      const nonInjective =
+        (inst.familyId === "powerNatural" && inst.kind === "even") ||
+        (inst.familyId === "powerNegative" && inst.kind === "even") ||
+        inst.familyId === "quadratic";
+      if (nonInjective) {
+        let y = 1;
+        if (inst.familyId === "quadratic") y = inst.q + (inst.a > 0 ? 2 : -2);
+        lines.push({ axis: "y", value: y, label: "vodoravni test", tone: "test" });
+        note = "Vodoravna testna premica seka graf v dveh točkah, zato funkcija ni injektivna.";
+      } else {
+        note = "Vsaka vodoravna premica lahko graf seka največ enkrat - funkcija je injektivna.";
+      }
+    }
+
+    if (p === "monotonicity") {
+      if (inst.familyId === "quadratic") {
+        lines.push({ axis: "x", value: inst.p, label: `x = ${inst.p}`, tone: "guide" });
+        note = "Navpična črta skozi teme loči interval naraščanja in padanja.";
+      } else if (inst.familyId === "powerNatural" && inst.kind === "even") {
+        lines.push({ axis: "x", value: 0, label: "x = 0", tone: "guide" });
+        note = "Levo od 0 funkcija pada, desno od 0 narašča.";
+      } else if (inst.familyId === "powerNegative") {
+        lines.push({ axis: "x", value: 0, label: "x = 0", tone: "guide" });
+        note = inst.kind === "even"
+          ? "Leva veja narašča, desna veja pada."
+          : "Na obeh intervalih (−∞,0) in (0,∞) funkcija pada.";
+      }
+    }
+
+    return { lines, note };
+  }
+
+  function renderGraph(question) {
+    const inst = question.inst;
+    const cfg = graphConfig(inst);
+    const { lines, note } = graphHighlight(question);
+    const W = 720;
+    const H = 360;
+    const pad = { l: 54, r: 22, t: 20, b: 42 };
+    const plotW = W - pad.l - pad.r;
+    const plotH = H - pad.t - pad.b;
+    const sx = x => pad.l + (x - cfg.xMin) / (cfg.xMax - cfg.xMin) * plotW;
+    const sy = y => pad.t + (cfg.yMax - y) / (cfg.yMax - cfg.yMin) * plotH;
+    const inY = y => Number.isFinite(y) && y >= cfg.yMin - (cfg.yMax - cfg.yMin) * 0.1 && y <= cfg.yMax + (cfg.yMax - cfg.yMin) * 0.1;
+
+    const esc = v => String(v).replace(/[&<>\"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    const niceStep = span => {
+      const raw = span / 8;
+      const p10 = Math.pow(10, Math.floor(Math.log10(raw)));
+      const n = raw / p10;
+      const step = n < 1.5 ? 1 : n < 3.5 ? 2 : n < 7.5 ? 5 : 10;
+      return step * p10;
+    };
+
+    const xStep = niceStep(cfg.xMax - cfg.xMin);
+    const yStep = niceStep(cfg.yMax - cfg.yMin);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Graf funkcije">`;
+    svg += `<rect x="${pad.l}" y="${pad.t}" width="${plotW}" height="${plotH}" fill="#ffffff" stroke="#e5e7eb"/>`;
+
+    for (let x = Math.ceil(cfg.xMin / xStep) * xStep; x <= cfg.xMax + 1e-9; x += xStep) {
+      const px = sx(x);
+      svg += `<line x1="${px}" y1="${pad.t}" x2="${px}" y2="${pad.t + plotH}" stroke="#eef1f5" stroke-width="1"/>`;
+      if (Math.abs(x) > 1e-9) svg += `<text x="${px}" y="${pad.t + plotH + 22}" text-anchor="middle" font-size="11" fill="#667085">${esc(Number(x.toFixed(6)))}</text>`;
+    }
+    for (let y = Math.ceil(cfg.yMin / yStep) * yStep; y <= cfg.yMax + 1e-9; y += yStep) {
+      const py = sy(y);
+      svg += `<line x1="${pad.l}" y1="${py}" x2="${pad.l + plotW}" y2="${py}" stroke="#eef1f5" stroke-width="1"/>`;
+      if (Math.abs(y) > 1e-9) svg += `<text x="${pad.l - 9}" y="${py + 4}" text-anchor="end" font-size="11" fill="#667085">${esc(Number(y.toFixed(6)))}</text>`;
+    }
+
+    if (cfg.xMin <= 0 && cfg.xMax >= 0) {
+      const px0 = sx(0);
+      svg += `<line x1="${px0}" y1="${pad.t}" x2="${px0}" y2="${pad.t + plotH}" stroke="#667085" stroke-width="1.4"/>`;
+      svg += `<text x="${px0 + 7}" y="${pad.t + 13}" font-size="12" fill="#475467">y</text>`;
+    }
+    if (cfg.yMin <= 0 && cfg.yMax >= 0) {
+      const py0 = sy(0);
+      svg += `<line x1="${pad.l}" y1="${py0}" x2="${pad.l + plotW}" y2="${py0}" stroke="#667085" stroke-width="1.4"/>`;
+      svg += `<text x="${pad.l + plotW - 10}" y="${py0 - 7}" font-size="12" fill="#475467">x</text>`;
+    }
+
+    const toneColor = tone => ({ accent: "#2557a7", bound: "#157347", domain: "#b42318", test: "#a15c00", guide: "#7a5af8" }[tone] || "#2557a7");
+    for (const line of lines) {
+      const c = toneColor(line.tone);
+      if (line.axis === "x" && line.value >= cfg.xMin && line.value <= cfg.xMax) {
+        const px = sx(line.value);
+        svg += `<line x1="${px}" y1="${pad.t}" x2="${px}" y2="${pad.t + plotH}" stroke="${c}" stroke-width="2" stroke-dasharray="8 6" opacity="0.9"/>`;
+        svg += `<text x="${Math.min(px + 7, W - 130)}" y="${pad.t + 18}" font-size="11" fill="${c}">${esc(line.label)}</text>`;
+      }
+      if (line.axis === "y" && line.value >= cfg.yMin && line.value <= cfg.yMax) {
+        const py = sy(line.value);
+        svg += `<line x1="${pad.l}" y1="${py}" x2="${pad.l + plotW}" y2="${py}" stroke="${c}" stroke-width="2" stroke-dasharray="8 6" opacity="0.9"/>`;
+        svg += `<text x="${pad.l + 8}" y="${Math.max(py - 7, pad.t + 12)}" font-size="11" fill="${c}">${esc(line.label)}</text>`;
+      }
+    }
+
+    const samples = 900;
+    let path = "";
+    let prevPx = null, prevPy = null, prevValid = false;
+    for (let i = 0; i <= samples; i++) {
+      const x = cfg.xMin + (cfg.xMax - cfg.xMin) * i / samples;
+      if (inst.familyId === "powerNegative" && Math.abs(x) < (cfg.xMax - cfg.xMin) / samples * 1.6) {
+        prevValid = false;
+        continue;
+      }
+      const y = graphValue(inst, x);
+      if (!inY(y)) {
+        prevValid = false;
+        continue;
+      }
+      const px = sx(x), py = sy(y);
+      const jump = prevValid && Math.abs(py - prevPy) > plotH * 0.35;
+      path += (!prevValid || jump ? `M ${px.toFixed(2)} ${py.toFixed(2)}` : ` L ${px.toFixed(2)} ${py.toFixed(2)}`);
+      prevPx = px; prevPy = py; prevValid = true;
+    }
+    svg += `<path d="${path}" fill="none" stroke="#2557a7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+    if (inst.familyId === "quadratic") {
+      const vx = sx(inst.p), vy = sy(inst.q);
+      svg += `<circle cx="${vx}" cy="${vy}" r="5" fill="#2557a7"/>`;
+      svg += `<text x="${vx + 8}" y="${vy - 8}" font-size="11" fill="#2557a7">T(${esc(inst.p)}, ${esc(inst.q)})</text>`;
+    }
+    if (inst.familyId === "root" && inst.kind === "square") {
+      svg += `<circle cx="${sx(0)}" cy="${sy(0)}" r="4.5" fill="#2557a7"/>`;
+    }
+
+    svg += `</svg>`;
+    els.graphWrap.innerHTML = svg;
+    els.graphNote.textContent = note;
+    els.graphLegend.innerHTML = `<strong>Funkcija:</strong> ${inst.expressionHtml}`;
+  }
+
+  function runGraphSelfTest(iterations = 1000) {
+    const failures = [];
+    for (let i = 0; i < iterations; i++) {
+      for (const fid of FAMILY_IDS) {
+        const inst = FAMILY_MAKERS[fid]();
+        const cfg = graphConfig(inst);
+        if (!(cfg.xMin < cfg.xMax && cfg.yMin < cfg.yMax)) failures.push(`${fid}: neveljaven grafični obseg`);
+        const xs = [cfg.xMin, (cfg.xMin + cfg.xMax) / 2, cfg.xMax];
+        for (const x of xs) {
+          const y = graphValue(inst, x);
+          if (fid !== "powerNegative" && fid !== "logarithmic" && !(Number.isFinite(y) || Number.isNaN(y))) {
+            failures.push(`${fid}: neveljavna vrednost grafa`);
+          }
+        }
+      }
+      if (failures.length > 20) break;
+    }
+    return { ok: failures.length === 0, failures, iterations };
+  }
+
+  const PROPERTY_MAKERS = {
+    domain: qDomain,
+    range: qRange,
+    monotonicity: qMonotonicity,
+    injectivity: qInjectivity,
+    boundedness: qBoundedness,
+    asymptotes: qAsymptotes
+  };
+
+  function makeQuestion(inst, propertyId, options, correctIds, explanation) {
+    return {
+      inst,
+      propertyId,
+      propertyLabel: PROPERTY_LABELS[propertyId],
+      options: shuffle(options),
+      correctIds: [...correctIds],
+      explanation
+    };
+  }
+
+  function generateQuestion(familyId = "all", propertyId = "all") {
+    const fid = familyId === "all" ? pick(FAMILY_IDS) : familyId;
+    const pid = propertyId === "all" ? pick(PROPERTY_IDS) : propertyId;
+    const inst = FAMILY_MAKERS[fid]();
+    return PROPERTY_MAKERS[pid](inst);
+  }
+
+  function runSelfTest(iterations = 2000) {
+    const failures = [];
+    for (let i = 0; i < iterations; i++) {
+      for (const fid of FAMILY_IDS) {
+        const inst = FAMILY_MAKERS[fid]();
+        for (const pid of PROPERTY_IDS) {
+          const q = PROPERTY_MAKERS[pid](inst);
+          const ids = q.options.map(o => o.id);
+          const texts = q.options.map(o => o.text);
+
+          if (!q.correctIds.length) failures.push(`${fid}/${pid}: brez pravilnega odgovora`);
+          if (new Set(ids).size !== ids.length) failures.push(`${fid}/${pid}: podvojeni ID-ji`);
+          if (new Set(texts).size !== texts.length) failures.push(`${fid}/${pid}: podvojeno besedilo`);
+          if (!q.correctIds.every(id => ids.includes(id))) failures.push(`${fid}/${pid}: pravilni ID manjka med možnostmi`);
+          if (!q.explanation || !q.propertyLabel) failures.push(`${fid}/${pid}: manjka razlaga ali naslov`);
+
+          if (["domain", "range", "injectivity"].includes(pid) && q.correctIds.length !== 1) {
+            failures.push(`${fid}/${pid}: pričakovan natanko 1 pravilen odgovor`);
+          }
+          if (pid === "boundedness" && q.correctIds.length !== 2) {
+            failures.push(`${fid}/${pid}: pričakovana 2 pravilna odgovora`);
+          }
+          if (pid === "asymptotes" && ![1,2].includes(q.correctIds.length)) {
+            failures.push(`${fid}/${pid}: nepričakovano število pravilnih asimptot`);
+          }
+        }
+      }
+      if (failures.length > 20) break;
+    }
+    return { ok: failures.length === 0, failures, iterations };
+  }
+
+  if (typeof window !== "undefined") {
+    window.__trainerSelfTest = runSelfTest;
+    window.__graphSelfTest = runGraphSelfTest;
+  }
+
+  if (typeof document === "undefined") return;
+
+  const els = {
+    familyFilter: document.getElementById("familyFilter"),
+    propertyFilter: document.getElementById("propertyFilter"),
+    modeFilter: document.getElementById("modeFilter"),
+    resetStats: document.getElementById("resetStats"),
+    mindmapPanel: document.getElementById("mindmapPanel"),
+    mindmapFlow: document.getElementById("mindmapFlow"),
+    mindmapAnchor: document.getElementById("mindmapAnchor"),
+    mindmapHelp: document.getElementById("mindmapHelp"),
+    feedbackMindmapFlow: document.getElementById("feedbackMindmapFlow"),
+    feedbackMindmapAnchor: document.getElementById("feedbackMindmapAnchor"),
+    familyLabel: document.getElementById("familyLabel"),
+    expression: document.getElementById("expression"),
+    propertyLabel: document.getElementById("propertyLabel"),
+    options: document.getElementById("options"),
+    checkBtn: document.getElementById("checkBtn"),
+    nextBtn: document.getElementById("nextBtn"),
+    feedback: document.getElementById("feedback"),
+    feedbackTitle: document.getElementById("feedbackTitle"),
+    feedbackText: document.getElementById("feedbackText"),
+    correctList: document.getElementById("correctList"),
+    graphPanel: document.getElementById("graphPanel"),
+    graphWrap: document.getElementById("graphWrap"),
+    graphNote: document.getElementById("graphNote"),
+    graphLegend: document.getElementById("graphLegend"),
+    statTotal: document.getElementById("statTotal"),
+    statCorrect: document.getElementById("statCorrect"),
+    statAccuracy: document.getElementById("statAccuracy"),
+    statStreak: document.getElementById("statStreak")
+  };
+
+  let currentQuestion = null;
+  let locked = false;
+  let stats = loadStats();
+
+  function loadStats() {
+    try {
+      const raw = localStorage.getItem("functionTrainerStatsV1");
+      if (!raw) return { total: 0, correct: 0, streak: 0 };
+      const parsed = JSON.parse(raw);
+      return {
+        total: Number(parsed.total) || 0,
+        correct: Number(parsed.correct) || 0,
+        streak: Number(parsed.streak) || 0
+      };
+    } catch {
+      return { total: 0, correct: 0, streak: 0 };
+    }
+  }
+
+  function saveStats() {
+    try {
+      localStorage.setItem("functionTrainerStatsV1", JSON.stringify(stats));
+    } catch { /* localStorage ni nujen za delovanje */ }
+  }
+
+  function renderStats() {
+    els.statTotal.textContent = stats.total;
+    els.statCorrect.textContent = stats.correct;
+    els.statStreak.textContent = stats.streak;
+    els.statAccuracy.textContent = stats.total ? `${Math.round(100 * stats.correct / stats.total)}%` : "–";
+  }
+
+  function renderMindmapInto(flowEl, anchorEl, activeProperty) {
+    flowEl.innerHTML = "";
+    MINDMAP_ORDER.forEach((pid, index) => {
+      const node = document.createElement("span");
+      node.className = `mindmap-node${pid === activeProperty ? " active" : ""}`;
+      node.textContent = MINDMAP_SHORT[pid];
+      node.title = PROPERTY_LABELS[pid];
+      flowEl.appendChild(node);
+
+      if (index < MINDMAP_ORDER.length - 1) {
+        const arrow = document.createElement("span");
+        arrow.className = "mindmap-arrow";
+        arrow.textContent = "→";
+        flowEl.appendChild(arrow);
+      }
+    });
+    anchorEl.textContent = activeProperty ? MINDMAP_ANCHORS[activeProperty] : "";
+  }
+
+  function updateMindmapVisibility() {
+    if (!currentQuestion) return;
+    const studyMode = els.modeFilter.value === "study";
+    const shouldShow = studyMode || locked;
+    els.mindmapPanel.classList.toggle("hidden", !shouldShow);
+    els.mindmapHelp.textContent = studyMode
+      ? "Učni način: okvir vidiš že med odgovarjanjem."
+      : "Izpitni način: okvir se pokaže šele po preverjanju.";
+    if (shouldShow) {
+      renderMindmapInto(els.mindmapFlow, els.mindmapAnchor, currentQuestion.propertyId);
+    }
+  }
+
+  function saveMode() {
+    try { localStorage.setItem("functionTrainerModeV1", els.modeFilter.value); } catch {}
+  }
+
+  function loadMode() {
+    try {
+      const saved = localStorage.getItem("functionTrainerModeV1");
+      if (saved === "study" || saved === "exam") els.modeFilter.value = saved;
+    } catch {}
+  }
+
+  function newQuestion() {
+    locked = false;
+    currentQuestion = generateQuestion(els.familyFilter.value, els.propertyFilter.value);
+
+    els.familyLabel.textContent = currentQuestion.inst.familyLabel;
+    els.expression.innerHTML = currentQuestion.inst.expressionHtml;
+    els.propertyLabel.textContent = currentQuestion.propertyLabel;
+    els.feedback.classList.remove("show");
+    els.feedbackTitle.textContent = "";
+    els.feedbackText.textContent = "";
+    els.correctList.textContent = "";
+    els.graphWrap.innerHTML = "";
+    els.graphNote.textContent = "";
+    els.graphLegend.textContent = "";
+    els.feedbackMindmapFlow.innerHTML = "";
+    els.feedbackMindmapAnchor.textContent = "";
+    els.checkBtn.style.display = "inline-block";
+    els.checkBtn.disabled = false;
+    els.nextBtn.style.display = "none";
+
+    els.options.innerHTML = "";
+    currentQuestion.options.forEach(opt => {
+      const label = document.createElement("label");
+      label.className = "option";
+      label.dataset.id = opt.id;
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = opt.id;
+      input.setAttribute("aria-label", opt.text);
+
+      const text = document.createElement("span");
+      text.innerHTML = opt.text;
+
+      const mark = document.createElement("span");
+      mark.className = "mark";
+
+      label.append(input, text, mark);
+      els.options.appendChild(label);
+    });
+
+    updateMindmapVisibility();
+  }
+
+  function selectedIds() {
+    return [...els.options.querySelectorAll("input:checked")].map(x => x.value);
+  }
+
+  function exactSetMatch(a, b) {
+    return a.length === b.length && a.every(x => b.includes(x));
+  }
+
+  function checkAnswer() {
+    if (locked || !currentQuestion) return;
+    locked = true;
+
+    const selected = selectedIds();
+    const correct = currentQuestion.correctIds;
+    const allCorrect = exactSetMatch(selected, correct);
+
+    stats.total += 1;
+    if (allCorrect) {
+      stats.correct += 1;
+      stats.streak += 1;
+    } else {
+      stats.streak = 0;
+    }
+    saveStats();
+    renderStats();
+
+    [...els.options.querySelectorAll(".option")].forEach(row => {
+      const input = row.querySelector("input");
+      const mark = row.querySelector(".mark");
+      const id = row.dataset.id;
+      const isSelected = input.checked;
+      const isCorrect = correct.includes(id);
+
+      input.disabled = true;
+      row.classList.add("locked");
+
+      if (isSelected && isCorrect) {
+        row.classList.add("correct-selected");
+        mark.textContent = "pravilno izbrano";
+      } else if (isSelected && !isCorrect) {
+        row.classList.add("wrong-selected");
+        mark.textContent = "napačno izbrano";
+      } else if (!isSelected && isCorrect) {
+        row.classList.add("missed-correct");
+        mark.textContent = "to bi moral izbrati";
+      }
+    });
+
+    const correctTexts = currentQuestion.options
+      .filter(o => correct.includes(o.id))
+      .map(o => o.text);
+
+    els.feedbackTitle.textContent = allCorrect ? "PRAVILNO" : "NI PRAVILNO";
+    els.feedbackTitle.className = `feedback-title ${allCorrect ? "good" : "bad"}`;
+    els.feedbackText.innerHTML = currentQuestion.explanation;
+    els.correctList.innerHTML = `<strong>Pravilni odgovor${correctTexts.length > 1 ? "i" : ""}:</strong> ${correctTexts.join("; ")}`;
+    renderMindmapInto(els.feedbackMindmapFlow, els.feedbackMindmapAnchor, currentQuestion.propertyId);
+    renderGraph(currentQuestion);
+    els.feedback.classList.add("show");
+    updateMindmapVisibility();
+
+    els.checkBtn.style.display = "none";
+    els.nextBtn.style.display = "inline-block";
+    els.nextBtn.focus();
+  }
+
+  els.checkBtn.addEventListener("click", checkAnswer);
+  els.nextBtn.addEventListener("click", newQuestion);
+  els.familyFilter.addEventListener("change", newQuestion);
+  els.propertyFilter.addEventListener("change", newQuestion);
+  els.modeFilter.addEventListener("change", () => {
+    saveMode();
+    updateMindmapVisibility();
+  });
+  els.resetStats.addEventListener("click", () => {
+    if (confirm("Ponastavim statistiko?")) {
+      stats = { total: 0, correct: 0, streak: 0 };
+      saveStats();
+      renderStats();
+    }
+  });
+
+  loadMode();
+  renderStats();
+  newQuestion();
+})();
+</script>
+</body>
+</html>
